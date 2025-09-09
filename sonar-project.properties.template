@@ -1,10 +1,10 @@
 # SonarQube server settings
 sonar.host.url=http://localhost:9000
-sonar.token=sqp_641b6b4172db0b85abd475bb0b448a02d3470f5a
+sonar.token=sqp_f8925cbd8654956df06bef97340260ae34c530f3
 
 # Project identification
-sonar.projectKey=cs4218
-sonar.projectName=cs4218
+sonar.projectKey=econ
+sonar.projectName=econ
 sonar.projectVersion=1.0
 
 # Analysis settings
