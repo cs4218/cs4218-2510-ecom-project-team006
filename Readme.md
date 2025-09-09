@@ -1,3 +1,5 @@
+## Continuous Integration (CI)
+- [View MS1 GitHub Actions Workflow](https://github.com/cs4218/cs4218-2510-ecom-project-team006/actions/runs/17570002631/job/49904030663)
 # CS4218 Project - Virtual Vault
 
 ## 1. Project Introduction
