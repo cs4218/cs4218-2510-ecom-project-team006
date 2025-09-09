@@ -31,10 +31,8 @@ describe("Admin Menu Component", () => {
     ];
 
     links.forEach(({ label, url }) => {
-      // check if the label is present
       expect(screen.getByText(label)).toBeInTheDocument();
 
-      // retrieve the link by the label and check its href attributes
       const link = screen.getByRole("link", { name: label });
       expect(link).toHaveAttribute("href", url);
     });
