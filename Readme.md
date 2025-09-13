@@ -1,6 +1,16 @@
+# CS4218 Project - Virtual Vault
 ## Continuous Integration (CI)
 - [View MS1 GitHub Actions Workflow](https://github.com/cs4218/cs4218-2510-ecom-project-team006/actions/runs/17570002631/job/49904030663)
-# CS4218 Project - Virtual Vault
+
+## Workload Distribution (MS1)
+
+| Assignee | Features | Frontend Files | Backend Files / Controllers |
+|---|-----------------|----------------|----------------------------|
+| Low Zheng Hui | Protected Routes + Registration + Login + General | `context/auth.js`<br>`pages/Auth/Register.js`<br>`pages/Auth/Login.js`<br>`components/Routes/Private.js`<br>`components/UserMenu.js`<br>`pages/user/Dashboard.js` | `helpers/authHelper.js`<br>`middlewares/authMiddleware.js`<br>`controllers/authController.js`<br> - `registerController`<br> - `loginController`<br> - `forgotPasswordController`<br> - `testController`<br>`models/userModel.js` |
+| Wong Swee Chong, Dave | Admin Dashboard + Admin Actions + Admin View Orders + Admin View Products + Admin View Users | `components/AdminMenu.js`<br>`pages/admin/AdminDashboard.js`<br>`components/Form/CategoryForm.js`<br>`pages/admin/CreateCategory.js`<br>`pages/admin/CreateProduct.js`<br>`pages/admin/UpdateProduct.js`<br>`pages/admin/AdminOrders.js`<br>`pages/admin/Products.js`<br>`pages/admin/Users.js` | `controllers/categoryController.js`<br> - `createCategoryController`<br> - `updateCategoryController`<br> - `deleteCategoryController`<br>`controllers/productController.js`<br> - `createProductController`<br> - `deleteProductController`<br> - `updateProductController` |
+| Liu Yi Fan | General + Orders + Profile | `components/Footer.js`<br>`components/Header.js`<br>`components/Layout.js`<br>`components/Spinner.js`<br>`pages/About.js`<br>`pages/Pagenotfound.js`<br>`pages/user/Orders.js`<br>`pages/user/Profile.js` | `config/db.js`<br>`controllers/authController.js`<br> - `updateProfileController`<br> - `getOrdersController`<br> - `getAllOrdersController`<br> - `orderStatusController`<br>`models/orderModel.js` |
+| Branson Lam Jian Tao | Product + Contact + Policy | `pages/ProductDetails.js`<br>`pages/CategoryProduct.js`<br>`pages/Contact.js`<br>`pages/Policy.js` | `controllers/productController.js`<br> - `getProductController`<br> - `getSingleProductController`<br> - `productPhotoController`<br> - `productFiltersController`<br> - `productCountController`<br> - `productListController`<br> - `searchProductController`<br> - `realtedProductController`<br> - `productCategoryController`<br>`models/productModel.js` |
+| Ling Jun Long | Search + Home + Cart + Category + Payment | `components/Form/SearchInput.js`<br>`context/search.js`<br>`pages/Search.js`<br>`pages/Homepage.js`<br>`context/cart.js`<br>`pages/CartPage.js`<br>`hooks/useCategory.js`<br>`pages/Categories.js` | `controllers/categoryController.js`<br> - `categoryController`<br> - `singleCategoryController`<br>`models/categoryModel.js`<br>`controllers/productController.js`<br> - `braintreeTokenController`<br> - `brainTreePaymentController` |
 
 ## 1. Project Introduction
 
