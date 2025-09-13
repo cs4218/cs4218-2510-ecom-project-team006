@@ -10,7 +10,7 @@ const mockValue2 = "Category 2";
 
 const inputPlaceholderText = "Enter new category";
 
-describe("Category Form", () => {
+describe("CategoryForm component", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -39,5 +39,13 @@ describe("Category Form", () => {
     fireEvent.click(screen.getByText("Submit"));
     
     expect(handleSubmitMock).toHaveBeenCalled();
+  });
+
+  test("does not call handleSubmit if input is empty", () => {
+    render(<CategoryForm handleSubmit={handleSubmitMock} value={""} setValue={setValueMock} />);
+    
+    fireEvent.click(screen.getByText("Submit"));
+    
+    expect(handleSubmitMock).not.toHaveBeenCalled();
   });
 });
