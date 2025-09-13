@@ -1,6 +1,5 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom"; 
 import AdminDashboard from "./AdminDashboard";
 import { useAuth } from "../../context/auth";
 import "@testing-library/jest-dom";
@@ -24,7 +23,7 @@ jest.mock("../../components/Layout", () => ({ children }) => (
 // Mock AdminMenu
 jest.mock("../../components/AdminMenu", () => () => <div>AdminMenuMock</div>);
 
-describe("Admin Dashboard Component", () => {
+describe("AdminDashboard Component", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -32,22 +31,16 @@ describe("Admin Dashboard Component", () => {
 
   test("renders AdminMenu", () => {
     useAuth.mockReturnValue([{ user: mockUser }]);
-    render(
-      <MemoryRouter>
-        <AdminDashboard />
-      </MemoryRouter>
-    );
+
+    render(<AdminDashboard />);
 
     expect(screen.getByText("AdminMenuMock")).toBeInTheDocument();
   });
 
   test("renders admin info correctly", () => {
-    useAuth.mockReturnValue([{ user: mockUser }]);
-    render(
-      <MemoryRouter>
-        <AdminDashboard />
-      </MemoryRouter>
-    );
+    useAuth.mockReturnValue([{ user: mockUser }]); 
+
+    render(<AdminDashboard />);
 
     expect(screen.getByText(`Admin Name : ${mockUser.name}`)).toBeInTheDocument();
     expect(screen.getByText(`Admin Email : ${mockUser.email}`)).toBeInTheDocument();
@@ -56,11 +49,8 @@ describe("Admin Dashboard Component", () => {
 
   test("handles missing auth object gracefully", () => {
     useAuth.mockReturnValue([null]);
-    render(
-      <MemoryRouter>
-        <AdminDashboard />
-      </MemoryRouter>
-    );
+
+    render(<AdminDashboard />);
 
     expect(screen.getByText("Admin Name :")).toBeInTheDocument();
     expect(screen.getByText("Admin Email :")).toBeInTheDocument();
@@ -69,11 +59,8 @@ describe("Admin Dashboard Component", () => {
 
   test("handles missing user object gracefully", () => {
     useAuth.mockReturnValue([{}]);
-    render(
-      <MemoryRouter>
-        <AdminDashboard />
-      </MemoryRouter>
-    );
+
+    render(<AdminDashboard />);
 
     expect(screen.getByText("Admin Name :")).toBeInTheDocument();
     expect(screen.getByText("Admin Email :")).toBeInTheDocument();

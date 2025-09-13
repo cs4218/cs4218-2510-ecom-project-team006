@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import AdminMenu from "./AdminMenu";
 import "@testing-library/jest-dom";
 
-describe("Admin Menu Component", () => {
+describe("AdminMenu Component", () => {
   test("renders the heading label", () => {
     render(
       <MemoryRouter>
@@ -31,10 +31,7 @@ describe("Admin Menu Component", () => {
     ];
 
     links.forEach(({ label, url }) => {
-      expect(screen.getByText(label)).toBeInTheDocument();
-
-      const link = screen.getByRole("link", { name: label });
-      expect(link).toHaveAttribute("href", url);
+      expect(screen.getByRole("link", { name: label })).toHaveAttribute("href", url);
     });
   });
 });

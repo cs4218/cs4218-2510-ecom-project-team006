@@ -8,7 +8,7 @@ import { Modal } from "antd";
 const CreateCategory = () => {
   const [categories, setCategories] = useState([]);
   const [name, setName] = useState("");
-  const [visible, setVisible] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const [updatedName, setUpdatedName] = useState("");
   //handle Form
@@ -19,14 +19,14 @@ const CreateCategory = () => {
         name,
       });
       if (data?.success) {
-        toast.success(`${name} is created`);
+        toast.success(data.message);
         getAllCategory();
       } else {
         toast.error(data.message);
       }
     } catch (error) {
       console.log(error);
-      toast.error("somthing went wrong in input form");
+      toast.error("Something went wrong");
     }
   };
 
@@ -39,7 +39,7 @@ const CreateCategory = () => {
       }
     } catch (error) {
       console.log(error);
-      toast.error("Something wwent wrong in getting catgeory");
+      toast.error("Something went wrong");
     }
   };
 
@@ -56,33 +56,32 @@ const CreateCategory = () => {
         { name: updatedName }
       );
       if (data.success) {
-        toast.success(`${updatedName} is updated`);
+        toast.success(data.message);
         setSelected(null);
         setUpdatedName("");
-        setVisible(false);
+        setIsOpen(false);
         getAllCategory();
       } else {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error("Somtihing went wrong");
+      console.log(error);
+      toast.error("Something went wrong");
     }
   };
   //delete category
   const handleDelete = async (pId) => {
     try {
-      const { data } = await axios.delete(
-        `/api/v1/category/delete-category/${pId}`
-      );
+      const { data } = await axios.delete(`/api/v1/category/delete-category/${pId}`);
       if (data.success) {
-        toast.success(`category is deleted`);
-
+        toast.success(data.message);
         getAllCategory();
       } else {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error("Somtihing went wrong");
+      console.log(error);
+      toast.error("Something went wrong");
     }
   };
   return (
@@ -118,7 +117,7 @@ const CreateCategory = () => {
                           <button
                             className="btn btn-primary ms-2"
                             onClick={() => {
-                              setVisible(true);
+                              setIsOpen(true);
                               setUpdatedName(c.name);
                               setSelected(c);
                             }}
@@ -141,9 +140,9 @@ const CreateCategory = () => {
               </table>
             </div>
             <Modal
-              onCancel={() => setVisible(false)}
+              onCancel={() => setIsOpen(false)}
               footer={null}
-              visible={visible}
+              open={isOpen}
             >
               <CategoryForm
                 value={updatedName}
