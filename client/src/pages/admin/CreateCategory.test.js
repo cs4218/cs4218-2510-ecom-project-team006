@@ -4,7 +4,6 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import CreateCategory from "./CreateCategory";
 import "@testing-library/jest-dom";
-import { mock } from "node:test";
 
 // Mock axios
 jest.mock("axios");
@@ -154,7 +153,7 @@ describe("CreateCategory Component", () => {
 
     // Assert
     await waitFor(() => {
-      expect(axios.delete).toHaveBeenCalledWith(`/api/v1/category/delete-category/${mockCategory1._id}`);
+      expect(axios.delete).toHaveBeenCalledWith(deleteCategoryURL(mockCategory1._id));
       expect(toast.success).toHaveBeenCalledWith("Category deleted successfully");
       expect(screen.queryByText(mockCategory1.name)).not.toBeInTheDocument();
     });

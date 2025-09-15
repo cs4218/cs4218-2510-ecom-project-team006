@@ -3,7 +3,7 @@ import { isAdmin, requireSignIn } from "./../middlewares/authMiddleware.js";
 import {
   categoryControlller,
   createCategoryController,
-  deleteCategoryCOntroller,
+  deleteCategoryController,
   singleCategoryController,
   updateCategoryController,
 } from "./../controllers/categoryController.js";
@@ -38,7 +38,7 @@ router.delete(
   "/delete-category/:id",
   requireSignIn,
   isAdmin,
-  deleteCategoryCOntroller
+  deleteCategoryController
 );
 
 export default router;
