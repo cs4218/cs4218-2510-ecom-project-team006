@@ -4,7 +4,6 @@ import { useCart } from "../context/cart";
 import { useAuth } from "../context/auth";
 import { useNavigate } from "react-router-dom";
 import DropIn from "braintree-web-drop-in-react";
-import { AiFillWarning } from "react-icons/ai";
 import axios from "axios";
 import toast from "react-hot-toast";
 import "../styles/CartStyles.css";
@@ -13,26 +12,25 @@ const CartPage = () => {
   const [auth, setAuth] = useAuth();
   const [cart, setCart] = useCart();
   const [clientToken, setClientToken] = useState("");
-  const [instance, setInstance] = useState("");
+  const [instance, setInstance] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  //total price
+  // total price
   const totalPrice = () => {
-    let total = 0;
-    cart?.forEach((item) => {
-      total = total + item.price;
-    });
+    const total =
+      cart?.reduce((sum, item) => sum + Number(item.price || 0), 0) || 0;
     return total.toLocaleString("en-US", {
       style: "currency",
       currency: "USD",
     });
   };
-  //delete item
-  const removeCartItem = (itemCart_id) => {
+
+  // delete item
+  const removeCartItem = (index) => {
     try {
-      let myCart = [...cart];
-      let index = myCart.findIndex((item) => item.itemCart_id === itemCart_id);
+      const myCart = [...cart];
+      if (index < 0 || index >= myCart.length) return;
       myCart.splice(index, 1);
       setCart(myCart);
       localStorage.setItem("cart", JSON.stringify(myCart));
@@ -41,11 +39,11 @@ const CartPage = () => {
     }
   };
 
-  //get payment gateway token
+  // get payment gateway token
   const getToken = async () => {
     try {
       const res = await axios.get("/api/v1/product/braintree/token");
-      if (res && res.data && res.data.clientToken) {
+      if (res?.data?.clientToken) {
         setClientToken(res.data.clientToken);
       } else {
         console.log("Wrong API response message");
@@ -54,16 +52,17 @@ const CartPage = () => {
       console.log(error);
     }
   };
+
   useEffect(() => {
     getToken();
   }, [auth?.token]);
 
-  //handle payments
+  // handle payments
   const handlePayment = async () => {
     try {
       setLoading(true);
       const { nonce } = await instance.requestPaymentMethod();
-      const { data } = await axios.post("/api/v1/product/braintree/payment", {
+      await axios.post("/api/v1/product/braintree/payment", {
         nonce,
         cart,
       });
@@ -77,30 +76,34 @@ const CartPage = () => {
       setLoading(false);
     }
   };
+
   return (
     <Layout>
-      <div className=" cart-page">
+      <div className="cart-page">
         <div className="row">
           <div className="col-md-12">
             <h1 className="text-center bg-light p-2 mb-1">
               {!auth?.user
                 ? "Hello Guest"
-                : `Hello  ${auth?.token && auth?.user?.name}`}
+                : `Hello ${auth?.token && auth?.user?.name}`}
               <p className="text-center">
                 {cart?.length
                   ? `You have ${cart.length} items in your cart ${
                       auth?.token ? "" : "Please login to checkout!"
                     }`
-                  : " Your cart is empty"}
+                  : "Your cart is empty"}
               </p>
             </h1>
           </div>
         </div>
         <div className="container ">
           <div className="row ">
-            <div className="col-md-7  p-0 m-0">
-              {cart?.map((p) => (
-                <div className="row card flex-row" key={p.itemCart_id}>
+            <div className="col-md-7 p-0 m-0">
+              {cart?.map((p, idx) => (
+                <div
+                  className="row card flex-row"
+                  key={p.itemCart_id ?? `${p._id}-${idx}`}
+                >
                   <div className="col-md-4">
                     <img
                       src={`/api/v1/product/product-photo/${p._id}`}
@@ -112,13 +115,13 @@ const CartPage = () => {
                   </div>
                   <div className="col-md-4">
                     <p>{p.name}</p>
-                    <p>{p.description.substring(0, 30)}</p>
+                    <p>{p.description?.substring(0, 30)}</p>
                     <p>Price : {p.price}</p>
                   </div>
                   <div className="col-md-4 cart-remove-btn">
                     <button
                       className="btn btn-danger"
-                      onClick={() => removeCartItem(p.itemCart_id)}
+                      onClick={() => removeCartItem(idx)}
                     >
                       Remove
                     </button>
@@ -126,24 +129,22 @@ const CartPage = () => {
                 </div>
               ))}
             </div>
-            <div className="col-md-5 cart-summary ">
+            <div className="col-md-5 cart-summary">
               <h2>Cart Summary</h2>
               <p>Total | Checkout | Payment</p>
               <hr />
               <h4 data-testid="total-price">Total : {totalPrice()} </h4>
               {auth?.user?.address ? (
-                <>
-                  <div className="mb-3">
-                    <h4>Current Address</h4>
-                    <h5>{auth?.user?.address}</h5>
-                    <button
-                      className="btn btn-outline-warning"
-                      onClick={() => navigate("/dashboard/user/profile")}
-                    >
-                      Update Address
-                    </button>
-                  </div>
-                </>
+                <div className="mb-3">
+                  <h4>Current Address</h4>
+                  <h5>{auth?.user?.address}</h5>
+                  <button
+                    className="btn btn-outline-warning"
+                    onClick={() => navigate("/dashboard/user/profile")}
+                  >
+                    Update Address
+                  </button>
+                </div>
               ) : (
                 <div className="mb-3">
                   {auth?.token ? (
@@ -180,9 +181,8 @@ const CartPage = () => {
                           flow: "vault",
                         },
                       }}
-                      onInstance={(instance) => setInstance(instance)}
+                      onInstance={(inst) => setInstance(inst)}
                     />
-
                     <button
                       className="btn btn-primary"
                       onClick={handlePayment}
