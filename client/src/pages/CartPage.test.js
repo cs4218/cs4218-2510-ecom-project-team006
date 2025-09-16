@@ -1,4 +1,3 @@
-// client/src/pages/CartPage.techniques.test.js
 import React from "react";
 import { render, waitFor, screen, fireEvent, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";

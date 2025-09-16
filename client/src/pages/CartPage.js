@@ -26,7 +26,7 @@ const CartPage = () => {
     });
   };
 
-  // delete item 
+  // delete item
   const removeCartItem = (index) => {
     try {
       const myCart = [...cart];
