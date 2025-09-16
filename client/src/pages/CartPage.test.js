@@ -26,19 +26,23 @@ jest.mock("../context/search", () => ({
 
 jest.mock("../hooks/useCategory", () => jest.fn(() => []));
 
+// Important: call onInstance inside an effect, not during render
 jest.mock("braintree-web-drop-in-react", () => {
-  const MockDropIn = function DropInMock(props) {
-    if (props && typeof props.onInstance === "function") {
-      const inst =
-        global.__btInstance ||
-        {
-          requestPaymentMethod: jest.fn().mockResolvedValue({ nonce: "nonce-xyz" }),
-        };
-      props.onInstance(inst);
-    }
-    return null;
-  };
-  return { __esModule: true, default: MockDropIn };
+  const React = require("react");
+  function DropInMock({ onInstance }) {
+    React.useEffect(() => {
+      if (typeof onInstance === "function") {
+        const inst =
+          global.__btInstance ||
+          {
+            requestPaymentMethod: jest.fn().mockResolvedValue({ nonce: "nonce-xyz" }),
+          };
+        onInstance(inst);
+      }
+    }, [onInstance]);
+    return <div data-testid="dropin" />;
+  }
+  return { __esModule: true, default: DropInMock };
 });
 
 const mockNavigate = jest.fn();
@@ -232,7 +236,6 @@ describe("CartPage – Additional focused cases", () => {
   });
 
   it("shows Processing while payment in-flight then resets on error", async () => {
-    // Arrange
     useAuth.mockReturnValue([
       { token: "t", user: { name: "Ivy", email: "ivy@example.com", address: "123 Main" } },
       jest.fn(),
@@ -241,20 +244,15 @@ describe("CartPage – Additional focused cases", () => {
       [{ itemCart_id: "r1", _id: 1, name: "Z", price: 10, description: "d" }],
       jest.fn(),
     ]);
-
-    // Provide a valid client token so the checkout block renders
     axios.get.mockResolvedValueOnce({ data: { clientToken: "ct" } });
 
-    // Make DropIn return a stable instance
     const failingInstance = {
       requestPaymentMethod: jest.fn().mockResolvedValue({ nonce: "nx" }),
     };
     global.__btInstance = failingInstance;
 
-    // Force the payment request to reject
     axios.post.mockRejectedValueOnce(new Error("boom"));
 
-    // Silence console noise but keep an assertion
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
 
     render(
@@ -278,7 +276,6 @@ describe("CartPage – Additional focused cases", () => {
 
     logSpy.mockRestore();
   });
-
 
   it("precisely sums decimal edge cases", () => {
     useAuth.mockReturnValue(authedWithAddress);
@@ -403,7 +400,6 @@ it("handlePayment success flow: clears cart, navigates, and toasts", async () =>
 
   axios.get.mockResolvedValueOnce({ data: { clientToken: "ct" } });
 
-  // Make sure the instance returns the nonce we assert on
   global.__btInstance = makeInstance("nonce-xyz");
 
   axios.post.mockResolvedValueOnce({ data: { ok: true } });
@@ -414,21 +410,21 @@ it("handlePayment success flow: clears cart, navigates, and toasts", async () =>
     </MemoryRouter>
   );
 
-  const btn = await screen.findByRole("button", { name: /make payment/i });
-  await waitFor(() => expect(btn).not.toBeDisabled());
-  fireEvent.click(btn);
+    const btn = await screen.findByRole("button", { name: /make payment/i });
+    await waitFor(() => expect(btn).not.toBeDisabled());
+    fireEvent.click(btn);
 
-  await waitFor(() => {
-    expect(global.__btInstance.requestPaymentMethod).toHaveBeenCalled();
-    expect(axios.post).toHaveBeenCalledWith("/api/v1/product/braintree/payment", {
-      nonce: "nonce-xyz",
-      cart: expect.any(Array),
+    await waitFor(() => {
+      expect(global.__btInstance.requestPaymentMethod).toHaveBeenCalled();
+      expect(axios.post).toHaveBeenCalledWith("/api/v1/product/braintree/payment", {
+        nonce: "nonce-xyz",
+        cart: expect.any(Array),
+      });
+      expect(window.localStorage.removeItem).toHaveBeenCalledWith("cart");
+      expect(setCart).toHaveBeenCalledWith([]);
+      expect(mockNavigate).toHaveBeenCalledWith("/dashboard/user/orders");
+      expect(toast.success).toHaveBeenCalledWith("Payment Completed Successfully");
     });
-    expect(window.localStorage.removeItem).toHaveBeenCalledWith("cart");
-    expect(setCart).toHaveBeenCalledWith([]);
-    expect(mockNavigate).toHaveBeenCalledWith("/dashboard/user/orders");
-    expect(toast.success).toHaveBeenCalledWith("Payment Completed Successfully");
-  });
 });
 
 it("Address actions: Update Address navigates to profile when authed with address", () => {
@@ -499,4 +495,3 @@ it("Checkout block hidden if missing clientToken or missing token or empty cart"
   );
   expect(screen.queryByTestId("dropin")).not.toBeInTheDocument();
 });
-
