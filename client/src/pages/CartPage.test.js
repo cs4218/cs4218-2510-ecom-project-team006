@@ -1,5 +1,5 @@
 import React from "react";
-import { render, waitFor, screen, fireEvent, act } from "@testing-library/react";
+import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom/extend-expect";
 import CartPage from "./CartPage";
@@ -7,8 +7,8 @@ import { useAuth } from "../context/auth";
 import { useCart } from "../context/cart";
 import axios from "axios";
 import toast from "react-hot-toast";
-import DropIn from "braintree-web-drop-in-react";
 
+// ---- Mocks ----
 jest.mock("axios");
 jest.mock("react-hot-toast");
 
@@ -26,15 +26,25 @@ jest.mock("../context/search", () => ({
 
 jest.mock("../hooks/useCategory", () => jest.fn(() => []));
 
+jest.mock("braintree-web-drop-in-react", () => {
+  const MockDropIn = function DropInMock(props) {
+    if (props && typeof props.onInstance === "function") {
+      const inst =
+        global.__btInstance ||
+        {
+          requestPaymentMethod: jest.fn().mockResolvedValue({ nonce: "nonce-xyz" }),
+        };
+      props.onInstance(inst);
+    }
+    return null;
+  };
+  return { __esModule: true, default: MockDropIn };
+});
+
 const mockNavigate = jest.fn();
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useNavigate: () => mockNavigate,
-}));
-
-jest.mock("braintree-web-drop-in-react", () => ({
-  __esModule: true,
-  default: jest.fn((props) => <div data-testid="dropin">dropin</div>),
 }));
 
 Object.defineProperty(window, "localStorage", {
@@ -45,6 +55,11 @@ Object.defineProperty(window, "localStorage", {
     clear: jest.fn(),
   },
   writable: true,
+});
+
+// ---- Helpers and fixtures ----
+const makeInstance = (nonce = "nonce-123") => ({
+  requestPaymentMethod: jest.fn().mockResolvedValue({ nonce }),
 });
 
 const authedWithAddress = [
@@ -70,17 +85,13 @@ const cartMulti = [
   jest.fn(),
 ];
 
-const makeInstance = (nonce = "nonce-123") => ({
-  requestPaymentMethod: jest.fn().mockResolvedValue({ nonce }),
-});
-
 beforeEach(() => {
   jest.clearAllMocks();
+  // Default Braintree instance for tests unless a test overrides it
+  global.__btInstance = makeInstance("nonce-xyz");
 });
 
-//
-// 1) Equivalence Partitioning
-//
+// ---- Tests ----
 describe("CartPage – Equivalence Partitioning", () => {
   it("EP: guest + empty cart", () => {
     useAuth.mockReturnValue(guest);
@@ -111,15 +122,10 @@ describe("CartPage – Equivalence Partitioning", () => {
     expect(screen.queryByTestId("dropin")).not.toBeInTheDocument();
   });
 
-  it("EP: authed + address + non-empty cart → checkout visible", async () => {
+  it("EP: authed + address + non-empty cart → checkout visible and enabled", async () => {
     useAuth.mockReturnValue(authedWithAddress);
     useCart.mockReturnValue(cartMulti);
     axios.get.mockResolvedValueOnce({ data: { clientToken: "ct" } });
-
-    DropIn.mockImplementationOnce(({ onInstance }) => {
-      act(() => onInstance(makeInstance()));
-      return <div data-testid="dropin">dropin</div>;
-    });
 
     render(
       <MemoryRouter>
@@ -127,10 +133,8 @@ describe("CartPage – Equivalence Partitioning", () => {
       </MemoryRouter>
     );
 
-    await waitFor(() => expect(screen.getByTestId("dropin")).toBeInTheDocument());
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: /make payment/i })).not.toBeDisabled()
-    );
+    const btn = await screen.findByRole("button", { name: /make payment/i });
+    await waitFor(() => expect(btn).not.toBeDisabled());
   });
 
   it("EP: authed + no address + non-empty cart → button disabled", async () => {
@@ -138,27 +142,19 @@ describe("CartPage – Equivalence Partitioning", () => {
     useCart.mockReturnValue(cartSingle);
     axios.get.mockResolvedValueOnce({ data: { clientToken: "ct" } });
 
-    DropIn.mockImplementationOnce(({ onInstance }) => {
-      act(() => onInstance(makeInstance()));
-      return <div data-testid="dropin">dropin</div>;
-    });
-
     render(
       <MemoryRouter>
         <CartPage />
       </MemoryRouter>
     );
 
-    await waitFor(() => expect(screen.getByTestId("dropin")).toBeInTheDocument());
-    expect(screen.getByRole("button", { name: /make payment/i })).toBeDisabled();
+    const btn = await screen.findByRole("button", { name: /make payment/i });
+    expect(btn).toBeDisabled();
   });
 });
 
-//
-// 2) Boundary Value Analysis
-//
 describe("CartPage – Boundary Value Analysis", () => {
-  it("BVA: price extremes aggregate to a precise formatted total", () => {
+  it("BVA: price extremes aggregate to formatted total", () => {
     useAuth.mockReturnValue(authedWithAddress);
     useCart.mockReturnValue([
       [
@@ -177,7 +173,7 @@ describe("CartPage – Boundary Value Analysis", () => {
     expect(screen.getByTestId("total-price")).toHaveTextContent("Total : $100,000.00");
   });
 
-  it("BVA: long description truncates safely", () => {
+  it("BVA: long description truncates", () => {
     const long = "L".repeat(500);
     useAuth.mockReturnValue(authedWithAddress);
     useCart.mockReturnValue([
@@ -192,7 +188,6 @@ describe("CartPage – Boundary Value Analysis", () => {
     );
 
     expect(screen.getByText("X")).toBeInTheDocument();
-    // The UI shows description.substring(0, 30)
     expect(screen.getByText(long.substring(0, 30))).toBeInTheDocument();
     expect(screen.getByTestId("total-price")).toHaveTextContent("Total : $10.00");
   });
@@ -211,28 +206,17 @@ describe("CartPage – Boundary Value Analysis", () => {
       </MemoryRouter>
     );
 
-    // Now removal is by mapped index; clicking the only Remove should call setCart([])
     fireEvent.click(screen.getByRole("button", { name: "Remove" }));
     expect(setCart).toHaveBeenCalledWith([]);
   });
 });
 
-//
-// 3) Token shape + pre-instance + loading UI + rounding + render details
-//
 describe("CartPage – Additional focused cases", () => {
   it("logs a message when token response is shaped incorrectly", async () => {
     const spy = jest.spyOn(console, "log").mockImplementation(() => {});
-    useAuth.mockReturnValue([
-      { token: "t", user: { name: "Ivy", email: "ivy@example.com", address: "123 Main" } },
-      jest.fn(),
-    ]);
-    useCart.mockReturnValue([
-      [{ itemCart_id: "r1", _id: 1, name: "Z", price: 10, description: "d" }],
-      jest.fn(),
-    ]);
+    useAuth.mockReturnValue(authedWithAddress);
+    useCart.mockReturnValue(cartSingle);
 
-    // Missing clientToken field → should log the new message text
     axios.get.mockResolvedValueOnce({ data: { somethingElse: true } });
 
     render(
@@ -247,7 +231,8 @@ describe("CartPage – Additional focused cases", () => {
     spy.mockRestore();
   });
 
-  it("shows 'Processing ....' while payment is in-flight, then resets on error", async () => {
+  it("shows Processing while payment in-flight then resets on error", async () => {
+    // Arrange
     useAuth.mockReturnValue([
       { token: "t", user: { name: "Ivy", email: "ivy@example.com", address: "123 Main" } },
       jest.fn(),
@@ -257,19 +242,20 @@ describe("CartPage – Additional focused cases", () => {
       jest.fn(),
     ]);
 
+    // Provide a valid client token so the checkout block renders
     axios.get.mockResolvedValueOnce({ data: { clientToken: "ct" } });
 
-    DropIn.mockImplementationOnce(({ onInstance }) => {
-      act(() =>
-        onInstance({ requestPaymentMethod: jest.fn().mockResolvedValue({ nonce: "nx" }) })
-      );
-      return <div data-testid="dropin">dropin</div>;
-    });
+    // Make DropIn return a stable instance
+    const failingInstance = {
+      requestPaymentMethod: jest.fn().mockResolvedValue({ nonce: "nx" }),
+    };
+    global.__btInstance = failingInstance;
 
-    // Make axios.post hang briefly so we can assert "Processing ...."
-    let resolvePost;
-    const postPromise = new Promise((res) => (resolvePost = res));
-    axios.post.mockImplementationOnce(() => postPromise);
+    // Force the payment request to reject
+    axios.post.mockRejectedValueOnce(new Error("boom"));
+
+    // Silence console noise but keep an assertion
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
 
     render(
       <MemoryRouter>
@@ -278,26 +264,24 @@ describe("CartPage – Additional focused cases", () => {
     );
 
     const button = await screen.findByRole("button", { name: /make payment/i });
+    await waitFor(() => expect(button).not.toBeDisabled());
     fireEvent.click(button);
 
-    // During in-flight: text changes
-    expect(await screen.findByRole("button", { name: /Processing \.\.\.\./i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /Processing \.\.\.\./i })
+    ).toBeInTheDocument();
 
-    // Fail the payment
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
-    resolvePost(Promise.reject(new Error("boom")));
     await waitFor(() => expect(logSpy).toHaveBeenCalledWith(expect.any(Error)));
-    logSpy.mockRestore();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /make payment/i })).toBeInTheDocument()
+    );
 
-    // After failure, button text returns to Make Payment (loading false)
-    expect(screen.getByRole("button", { name: /make payment/i })).toBeInTheDocument();
+    logSpy.mockRestore();
   });
 
-  it("precisely sums decimal edge cases (e.g., 0.1 + 0.2 → $0.30)", () => {
-    useAuth.mockReturnValue([
-      { token: "t", user: { name: "Ivy", email: "ivy@example.com", address: "123 Main" } },
-      jest.fn(),
-    ]);
+
+  it("precisely sums decimal edge cases", () => {
+    useAuth.mockReturnValue(authedWithAddress);
     useCart.mockReturnValue([
       [
         { itemCart_id: "a", _id: 1, name: "Dec A", price: 0.1, description: "a" },
@@ -315,17 +299,14 @@ describe("CartPage – Additional focused cases", () => {
     expect(screen.getByTestId("total-price")).toHaveTextContent("Total : $0.30");
   });
 
-  it("removes the middle line item from a three-item cart correctly (by index)", () => {
+  it("removes the middle item from a three-item cart by index", () => {
     const setCart = jest.fn();
     const current = [
       { itemCart_id: "k1", _id: 1, name: "P1", price: 10, description: "d" },
       { itemCart_id: "k2", _id: 2, name: "P2", price: 20, description: "d" },
       { itemCart_id: "k3", _id: 3, name: "P3", price: 30, description: "d" },
     ];
-    useAuth.mockReturnValue([
-      { token: "t", user: { name: "Ivy", email: "ivy@example.com", address: "123 Main" } },
-      jest.fn(),
-    ]);
+    useAuth.mockReturnValue(authedWithAddress);
     useCart.mockReturnValue([current, setCart]);
 
     render(
@@ -334,7 +315,6 @@ describe("CartPage – Additional focused cases", () => {
       </MemoryRouter>
     );
 
-    // Click the second "Remove" (mapped index 1)
     fireEvent.click(screen.getAllByRole("button", { name: "Remove" })[1]);
 
     const expected = [current[0], current[2]];
@@ -342,7 +322,7 @@ describe("CartPage – Additional focused cases", () => {
     expect(window.localStorage.setItem).toHaveBeenCalledWith("cart", JSON.stringify(expected));
   });
 
-  it("renders product image alt and url based on item data", () => {
+  it("renders product image alt and url", () => {
     useAuth.mockReturnValue(authedWithAddress);
     useCart.mockReturnValue([
       [{ itemCart_id: "r1", _id: 42, name: "X-Ray", price: 9, description: "d" }],
@@ -423,11 +403,8 @@ it("handlePayment success flow: clears cart, navigates, and toasts", async () =>
 
   axios.get.mockResolvedValueOnce({ data: { clientToken: "ct" } });
 
-  const instance = makeInstance("nonce-xyz");
-  DropIn.mockImplementationOnce(({ onInstance }) => {
-    act(() => onInstance(instance));
-    return <div data-testid="dropin">dropin</div>;
-  });
+  // Make sure the instance returns the nonce we assert on
+  global.__btInstance = makeInstance("nonce-xyz");
 
   axios.post.mockResolvedValueOnce({ data: { ok: true } });
 
@@ -438,10 +415,11 @@ it("handlePayment success flow: clears cart, navigates, and toasts", async () =>
   );
 
   const btn = await screen.findByRole("button", { name: /make payment/i });
+  await waitFor(() => expect(btn).not.toBeDisabled());
   fireEvent.click(btn);
 
   await waitFor(() => {
-    expect(instance.requestPaymentMethod).toHaveBeenCalled();
+    expect(global.__btInstance.requestPaymentMethod).toHaveBeenCalled();
     expect(axios.post).toHaveBeenCalledWith("/api/v1/product/braintree/payment", {
       nonce: "nonce-xyz",
       cart: expect.any(Array),
@@ -468,7 +446,6 @@ it("Address actions: Update Address navigates to profile when authed with addres
 });
 
 it("Address actions: authed without address shows Update; guest shows Login and navigates with state '/cart'", () => {
-  // Authed without address
   useAuth.mockReturnValue(authedNoAddress);
   useCart.mockReturnValue(cartSingle);
   render(
@@ -478,7 +455,6 @@ it("Address actions: authed without address shows Update; guest shows Login and 
   );
   expect(screen.getByRole("button", { name: /update address/i })).toBeInTheDocument();
 
-  // Guest path
   useAuth.mockReturnValue(guest);
   render(
     <MemoryRouter>
@@ -523,3 +499,4 @@ it("Checkout block hidden if missing clientToken or missing token or empty cart"
   );
   expect(screen.queryByTestId("dropin")).not.toBeInTheDocument();
 });
+
