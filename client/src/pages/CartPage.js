@@ -19,24 +19,20 @@ const CartPage = () => {
 
   //total price
   const totalPrice = () => {
-    try {
-      let total = 0;
-      cart?.map((item) => {
-        total = total + item.price;
-      });
-      return total.toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD",
-      });
-    } catch (error) {
-      console.log(error);
-    }
+    let total = 0;
+    cart?.forEach((item) => {
+      total = total + item.price;
+    });
+    return total.toLocaleString("en-US", {
+      style: "currency",
+      currency: "USD",
+    });
   };
-  //detele item
-  const removeCartItem = (pid) => {
+  //delete item
+  const removeCartItem = (itemCart_id) => {
     try {
       let myCart = [...cart];
-      let index = myCart.findIndex((item) => item._id === pid);
+      let index = myCart.findIndex((item) => item.itemCart_id === itemCart_id);
       myCart.splice(index, 1);
       setCart(myCart);
       localStorage.setItem("cart", JSON.stringify(myCart));
@@ -48,8 +44,12 @@ const CartPage = () => {
   //get payment gateway token
   const getToken = async () => {
     try {
-      const { data } = await axios.get("/api/v1/product/braintree/token");
-      setClientToken(data?.clientToken);
+      const res = await axios.get("/api/v1/product/braintree/token");
+      if (res && res.data && res.data.clientToken) {
+        setClientToken(res.data.clientToken);
+      } else {
+        console.log("Wrong API response message");
+      }
     } catch (error) {
       console.log(error);
     }
@@ -71,7 +71,7 @@ const CartPage = () => {
       localStorage.removeItem("cart");
       setCart([]);
       navigate("/dashboard/user/orders");
-      toast.success("Payment Completed Successfully ");
+      toast.success("Payment Completed Successfully");
     } catch (error) {
       console.log(error);
       setLoading(false);
@@ -88,10 +88,10 @@ const CartPage = () => {
                 : `Hello  ${auth?.token && auth?.user?.name}`}
               <p className="text-center">
                 {cart?.length
-                  ? `You Have ${cart.length} items in your cart ${
-                      auth?.token ? "" : "please login to checkout !"
+                  ? `You have ${cart.length} items in your cart ${
+                      auth?.token ? "" : "Please login to checkout!"
                     }`
-                  : " Your Cart Is Empty"}
+                  : " Your cart is empty"}
               </p>
             </h1>
           </div>
@@ -100,7 +100,7 @@ const CartPage = () => {
           <div className="row ">
             <div className="col-md-7  p-0 m-0">
               {cart?.map((p) => (
-                <div className="row card flex-row" key={p._id}>
+                <div className="row card flex-row" key={p.itemCart_id}>
                   <div className="col-md-4">
                     <img
                       src={`/api/v1/product/product-photo/${p._id}`}
@@ -118,7 +118,7 @@ const CartPage = () => {
                   <div className="col-md-4 cart-remove-btn">
                     <button
                       className="btn btn-danger"
-                      onClick={() => removeCartItem(p._id)}
+                      onClick={() => removeCartItem(p.itemCart_id)}
                     >
                       Remove
                     </button>
@@ -130,7 +130,7 @@ const CartPage = () => {
               <h2>Cart Summary</h2>
               <p>Total | Checkout | Payment</p>
               <hr />
-              <h4>Total : {totalPrice()} </h4>
+              <h4 data-testid="total-price">Total : {totalPrice()} </h4>
               {auth?.user?.address ? (
                 <>
                   <div className="mb-3">
@@ -162,7 +162,7 @@ const CartPage = () => {
                         })
                       }
                     >
-                      Plase Login to checkout
+                      Please Login to checkout
                     </button>
                   )}
                 </div>
@@ -173,6 +173,7 @@ const CartPage = () => {
                 ) : (
                   <>
                     <DropIn
+                      data-testid="dropin"
                       options={{
                         authorization: clientToken,
                         paypal: {
