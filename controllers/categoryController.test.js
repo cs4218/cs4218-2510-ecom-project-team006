@@ -35,7 +35,7 @@ describe("createCategory controller", () => {
     await createCategoryController(req, res);
 
     expect(categoryModel.findOne).toHaveBeenCalledWith({ name: "Category 1" });
-    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.status).toHaveBeenCalledWith(409);
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       message: "Category already exists",
@@ -124,7 +124,7 @@ describe("updateCategory controller", () => {
     await updateCategoryController(req, res);
 
     expect(categoryModel.findOne).toHaveBeenCalledWith({ name: "Duplicate" });
-    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.status).toHaveBeenCalledWith(409);
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       message: "Category with this name already exists",
