@@ -1,7 +1,6 @@
 import { createCategoryController, updateCategoryController, deleteCategoryController } from "./categoryController.js";
 import categoryModel from "../models/categoryModel.js";
 import slugify from "slugify";
-import { error } from "console";
 
 jest.mock("../models/categoryModel.js");
 
@@ -17,7 +16,7 @@ describe("createCategory controller", () => {
     jest.clearAllMocks();
   });
 
-  test("returns unsuccessful if name is missing", async () => {
+  test("unsuccessful if name is missing", async () => {
     req.body = {};
     await createCategoryController(req, res);
 
@@ -28,17 +27,17 @@ describe("createCategory controller", () => {
     });
   });
 
-  test("returns unsuccessful if category already exists", async () => {
+  test("unsuccessful if category already exists", async () => {
     req.body = { name: "Category 1" };
     categoryModel.findOne.mockResolvedValueOnce({ _id: "1", name: "Category 1" });
 
     await createCategoryController(req, res);
 
-    expect(categoryModel.findOne).toHaveBeenCalledWith({ name: "Category 1" });
+    expect(categoryModel.findOne).toHaveBeenCalledWith({ slug: slugify("Category 1") });
     expect(res.status).toHaveBeenCalledWith(409);
     expect(res.send).toHaveBeenCalledWith({
       success: false,
-      message: "Category already exists",
+      message: "Category with this name already exists",
     });
   });
 
@@ -89,7 +88,7 @@ describe("updateCategory controller", () => {
     jest.clearAllMocks();
   });
 
-  test("returns unsuccessful if name is missing", async () => {
+  test("unsuccessful if name is missing", async () => {
     req.params = { id: "1" };
     req.body = {};
 
@@ -102,7 +101,7 @@ describe("updateCategory controller", () => {
     });
   });
 
-  test("returns unsuccessful if id param is missing", async () => {
+  test("unsuccessful if id param is missing", async () => {
     req.params = {}; 
     req.body = { name: "Updated" };
 
@@ -115,7 +114,7 @@ describe("updateCategory controller", () => {
     });
  });
 
-  test("returns unsuccessful if category with same name exists", async () => {
+  test("unsuccessful if category with same slug exists", async () => {
     req.params = { id: "1" };
     req.body = { name: "Duplicate" };
 
@@ -123,7 +122,7 @@ describe("updateCategory controller", () => {
 
     await updateCategoryController(req, res);
 
-    expect(categoryModel.findOne).toHaveBeenCalledWith({ name: "Duplicate" });
+    expect(categoryModel.findOne).toHaveBeenCalledWith({ slug: slugify("Duplicate") });
     expect(res.status).toHaveBeenCalledWith(409);
     expect(res.send).toHaveBeenCalledWith({
       success: false,
@@ -131,7 +130,7 @@ describe("updateCategory controller", () => {
     });
   });
 
-  test("returns unsuccessful if category with same id is not found", async () => {
+  test("unsuccessful if category with same id is not found", async () => {
     req.params = { id: "1" };
     req.body = { name: "Updated" };
 
@@ -202,7 +201,7 @@ describe("deleteCategory controller", () => {
     jest.clearAllMocks();
   });
 
-  test("returns 400 if id param is missing", async () => {
+  test("unsuccesful if id param is missing", async () => {
     req.params = {};
 
     await deleteCategoryController(req, res);
@@ -211,6 +210,19 @@ describe("deleteCategory controller", () => {
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       message: "Category ID is required",
+    });
+  });
+
+  test("unsuccessful if category with same id is not found", async () => {
+    req.params = { id: "1" };
+    categoryModel.findByIdAndDelete.mockResolvedValue(null);
+
+    await deleteCategoryController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.send).toHaveBeenCalledWith({
+      success: false,
+      message: "Category not found",
     });
   });
 
@@ -225,19 +237,6 @@ describe("deleteCategory controller", () => {
     expect(res.send).toHaveBeenCalledWith({
       success: true,
       message: "Category deleted successfully",
-    });
-  });
-
-  test("returns 404 if category not found", async () => {
-    req.params = { id: "1" };
-    categoryModel.findByIdAndDelete.mockResolvedValue(null);
-
-    await deleteCategoryController(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.send).toHaveBeenCalledWith({
-      success: false,
-      message: "Category not found",
     });
   });
 
