@@ -145,6 +145,8 @@ const CreateProduct = () => {
                     className="form-control"
                     onChange={(e) => setPrice(e.target.value)}
                     required
+                    step="0.01"
+                    min="0"
                   />
                 </div>
                 <div className="mb-3">
@@ -155,6 +157,9 @@ const CreateProduct = () => {
                     className="form-control"
                     onChange={(e) => setQuantity(e.target.value)}
                     required
+                    step="1"
+                    min="0"
+                    
                   />
                 </div>
                 <div className="mb-3">

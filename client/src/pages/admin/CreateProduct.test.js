@@ -160,6 +160,47 @@ describe("CreateProduct", () => {
     }
   });
 
+test.each([
+  ["0.00", true],
+  ["0.01", true],
+  ["-0.01", false],
+  ["12.345", false],
+  ["abc", false],
+])("price=%s should be valid=%s", (value, expected) => {
+    render(<CreateProduct />);
+    const priceInput = screen.getByPlaceholderText("Write a price");
+    fireEvent.change(priceInput, { target: { value } });
+    expect(priceInput.validity.valid).toBe(expected);
+});
+
+test.each([
+  ["0", true],
+  ["1", true],
+  ["-1", false],
+  ["1.5", false],
+  ["abc", false],
+])("quantity=%s should be valid=%s", (value, expected) => {
+  render(<CreateProduct />);
+  const quantityInput = screen.getByPlaceholderText("Write a quantity");
+  fireEvent.change(quantityInput, { target: { value } });
+  expect(quantityInput.validity.valid).toBe(expected);
+});
+
+test("quantity field enforces integers", () => {
+  render(<CreateProduct />);
+  const quantityInput = screen.getByPlaceholderText("Write a quantity");
+
+  fireEvent.change(quantityInput, { target: { value: "5" } });
+  expect(quantityInput.validity.valid).toBe(true);
+
+  fireEvent.change(quantityInput, { target: { value: "1.5" } });
+  expect(quantityInput.validity.valid).toBe(false);
+
+  fireEvent.change(quantityInput, { target: { value: "-1" } });
+  expect(quantityInput.validity.valid).toBe(false);
+});
+
+
   test("creates product successfully", async () => {
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: mockCategories },
