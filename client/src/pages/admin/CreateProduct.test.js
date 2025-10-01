@@ -1,11 +1,10 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { Form, MemoryRouter } from "react-router-dom";
+import { MemoryRouter } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import CreateProduct from "./CreateProduct";
 import "@testing-library/jest-dom";
-import { mock } from "node:test";
 
 // Mock navigate hook
 const mockNavigate = jest.fn();
@@ -56,7 +55,7 @@ mockProduct.append("shipping", mockProductShipping);
 // Mock AdminMenu
 jest.mock("../../components/AdminMenu", () => () => <div>AdminMenuMock</div>);
 
-describe("CreateProduct", () => {
+describe("CreateProduct Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     global.URL.createObjectURL = jest.fn(() => "mocked-url");
@@ -160,47 +159,63 @@ describe("CreateProduct", () => {
     }
   });
 
-test.each([
-  ["0.00", true],
-  ["0.01", true],
-  ["-0.01", false],
-  ["12.345", false],
-  ["abc", false],
-])("price=%s should be valid=%s", (value, expected) => {
-    render(<CreateProduct />);
+  test.each([
+    ["0.00", true],
+    ["0.01", true],
+    ["-0.01", false],
+    ["12.345", false],
+    ["abc", false],
+  ])("price=%s should be valid=%s", (value, expected) => {
+    render(
+      <MemoryRouter>
+        <CreateProduct />
+      </MemoryRouter>
+    );
     const priceInput = screen.getByPlaceholderText("Write a price");
     fireEvent.change(priceInput, { target: { value } });
     expect(priceInput.validity.valid).toBe(expected);
-});
+  });
 
-test.each([
-  ["0", true],
-  ["1", true],
-  ["-1", false],
-  ["1.5", false],
-  ["abc", false],
-])("quantity=%s should be valid=%s", (value, expected) => {
-  render(<CreateProduct />);
-  const quantityInput = screen.getByPlaceholderText("Write a quantity");
-  fireEvent.change(quantityInput, { target: { value } });
-  expect(quantityInput.validity.valid).toBe(expected);
-});
+  test.each([
+    ["0", true],
+    ["1", true],
+    ["-1", false],
+    ["1.5", false],
+    ["abc", false],
+  ])("quantity=%s should be valid=%s", (value, expected) => {
+    render(
+      <MemoryRouter>
+        <CreateProduct />
+      </MemoryRouter>
+    );
+    const quantityInput = screen.getByPlaceholderText("Write a quantity");
+    fireEvent.change(quantityInput, { target: { value } });
+    expect(quantityInput.validity.valid).toBe(expected);
+  });
 
-test("quantity field enforces integers", () => {
-  render(<CreateProduct />);
-  const quantityInput = screen.getByPlaceholderText("Write a quantity");
+  test("uploads and clears photo successfully", () => {
+    render(
+      <MemoryRouter>
+        <CreateProduct />
+      </MemoryRouter>
+    );
 
-  fireEvent.change(quantityInput, { target: { value: "5" } });
-  expect(quantityInput.validity.valid).toBe(true);
+    expect(screen.queryByAltText("product_photo")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /clear photo/i })).not.toBeInTheDocument();
 
-  fireEvent.change(quantityInput, { target: { value: "1.5" } });
-  expect(quantityInput.validity.valid).toBe(false);
+    const fileInput = screen.getByLabelText(/upload photo/i);
+    fireEvent.change(fileInput, {
+      target: { files: [mockProductPhoto] },
+    });
 
-  fireEvent.change(quantityInput, { target: { value: "-1" } });
-  expect(quantityInput.validity.valid).toBe(false);
-});
+    expect(screen.getByAltText("product_photo")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /clear photo/i })).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole("button", { name: /clear photo/i }));
 
+    expect(screen.queryByAltText("product_photo")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /clear photo/i })).not.toBeInTheDocument();
+  });
   test("creates product successfully", async () => {
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: mockCategories },

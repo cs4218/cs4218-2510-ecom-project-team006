@@ -105,16 +105,25 @@ const CreateProduct = () => {
                   </label>
                 </div>
                 <div className="mb-3">
-                  {photo && (
-                    <div className="text-center">
-                      <img
-                        src={URL.createObjectURL(photo)}
-                        alt="product_photo"
-                        height={"200px"}
-                        className="img img-responsive"
-                      />
-                    </div>
-                  )}
+                  {photo && 
+                    <>
+                      <div className="text-center">
+                        <img
+                          src={URL.createObjectURL(photo)}
+                          alt="product_photo"
+                          height={"200px"}
+                          className="img img-responsive"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-danger mt-2"
+                        onClick={() => setPhoto("")}
+                      >
+                        Clear Photo
+                      </button>
+                    </>
+                  }
                 </div>
                 <div className="mb-3">
                   <input
