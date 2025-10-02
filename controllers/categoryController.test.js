@@ -4,7 +4,7 @@ import slugify from "slugify";
 
 jest.mock("../models/categoryModel.js");
 
-describe("createCategory controller", () => {
+describe("createCategoryController", () => {
   let req, res;
 
   beforeEach(() => {
@@ -45,12 +45,15 @@ describe("createCategory controller", () => {
     req.body = { name: "Category 1" };
     categoryModel.findOne.mockResolvedValueOnce(null);
     const savedCategory = { _id: "1", name: "Category 1", slug: slugify("Category 1") };
+    const saveMock = jest.fn().mockResolvedValue(savedCategory);
     categoryModel.mockImplementation(() => ({
-      save: jest.fn().mockResolvedValue(savedCategory),
+      save: saveMock,
     }));
 
     await createCategoryController(req, res);
 
+    expect(categoryModel).toHaveBeenCalledWith({ name: "Category 1", slug: slugify("Category 1") });
+    expect(saveMock).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.send).toHaveBeenCalledWith({
       success: true,
@@ -76,7 +79,7 @@ describe("createCategory controller", () => {
   });
 });
 
-describe("updateCategory controller", () => {
+describe("updateCategoryController", () => {
   let req, res;
 
   beforeEach(() => {
@@ -162,6 +165,11 @@ describe("updateCategory controller", () => {
 
     await updateCategoryController(req, res);
 
+    expect(categoryModel.findByIdAndUpdate).toHaveBeenCalledWith(
+      "1",
+      { name: "Updated", slug: slugify("Updated") },
+      { new: true }
+    );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalledWith({
       success: true,
@@ -189,7 +197,7 @@ describe("updateCategory controller", () => {
   });
 });
 
-describe("deleteCategory controller", () => {
+describe("deleteCategoryController", () => {
   let req, res;
 
   beforeEach(() => {
@@ -219,6 +227,7 @@ describe("deleteCategory controller", () => {
 
     await deleteCategoryController(req, res);
 
+    expect(categoryModel.findByIdAndDelete).toHaveBeenCalledWith("1");
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.send).toHaveBeenCalledWith({
       success: false,
