@@ -6,6 +6,7 @@ import fs from "fs";
 import slugify from "slugify";
 import braintree from "braintree";
 import dotenv from "dotenv";
+import { ca } from "date-fns/locale";
 
 dotenv.config();
 
@@ -30,6 +31,8 @@ export const createProductController = async (req, res) => {
         return res.status(400).send({ error: "Description is required" });
       case !price:
         return res.status(400).send({ error: "Price is required" });
+      case !category:
+        return res.status(400).send({ error: "Category is required" });
       case !quantity:
         return res.status(400).send({ error: "Quantity is required" });
       case !shipping:
@@ -48,15 +51,14 @@ export const createProductController = async (req, res) => {
       });
     }
 
-    if (category) {
-      const existingCategory = await categoryModel.findById(category);
-      if (!existingCategory) {
-        return res.status(404).send({
-          success: false,
-          message: "Category with this ID not found",
-        });
-      }
+    const existingCategory = await categoryModel.findById(category);
+    if (!existingCategory) {
+      return res.status(404).send({
+        success: false,
+        message: "Category not found",
+      });
     }
+
     const product = new productModel({
       ...req.fields,
       slug: slugify(req.fields.name)
@@ -186,16 +188,16 @@ export const productPhotoController = async (req, res) => {
 //delete controller
 export const deleteProductController = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { pid } = req.params;
 
-    if (!id) {
+    if (!pid) {
       return res.status(400).send({
         success: false,
         message: "Product ID is required",
       });
     }
 
-    const product = await productModel.findByIdAndDelete(id);
+    const product = await productModel.findByIdAndDelete(pid);
 
     if (!product) {
       return res.status(404).send({
@@ -224,48 +226,82 @@ export const updateProductController = async (req, res) => {
     const { name, description, price, category, quantity, shipping } =
       req.fields;
     const { photo } = req.files;
-    //alidation
-    switch (true) {
-      case !name:
-        return res.status(500).send({ error: "Name is Required" });
-      case !description:
-        return res.status(500).send({ error: "Description is Required" });
-      case !price:
-        return res.status(500).send({ error: "Price is Required" });
-      case !category:
-        return res.status(500).send({ error: "Category is Required" });
-      case !quantity:
-        return res.status(500).send({ error: "Quantity is Required" });
-      case photo && photo.size > 1000000:
-        return res
-          .status(500)
-          .send({ error: "photo is Required and should be less then 1mb" });
+    const { pid } = req.params
+
+    if (!pid) {
+      return res.status(400).send({
+        success: false,
+        message: "Product ID is required",
+      });
     }
 
-    const products = await productModel.findByIdAndUpdate(
-      req.params.pid,
-      { ...req.fields, slug: slugify(name) },
-      { new: true }
-    );
-    if (photo) {
-      products.photo.data = fs.readFileSync(photo.path);
-      products.photo.contentType = photo.type;
+    switch (true) {
+      case !name:
+        return res.status(400).send({ error: "Name is required" });
+      case !description:
+        return res.status(400).send({ error: "Description is required" });
+      case !price:
+        return res.status(400).send({ error: "Price is required" });
+      case !category:
+        return res.status(400).send({ error: "Category is required" });
+      case !quantity:
+        return res.status(400).send({ error: "Quantity is required" });
+      case !shipping:
+        return res.status(400).send({ error: "Shipping is required" });
+      case photo && photo.size > 1000000:
+        return res
+          .status(400)
+          .send({ error: "Photo should be less than 1MB" });
     }
-    await products.save();
-    res.status(201).send({
+
+    const product = await productModel.findById(pid);
+    if (!product) {
+      return res.status(404).send({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    const existingProduct = await productModel.findOne({ slug: slugify(name) });
+    if (existingProduct && existingProduct._id.toString() !== product._id.toString()) {
+      return res.status(409).send({
+        success: false,
+        message: "Product with this name already exists",
+      });
+    }
+
+    const existingCategory = await categoryModel.findById(category);
+    if (!existingCategory) {
+      return res.status(404).send({
+        success: false,
+        message: "Category not found",
+      });
+    }
+
+    Object.assign(product, { ...req.fields, slug: slugify(name) });
+
+    if (photo) {
+      product.photo.data = fs.readFileSync(photo.path);
+      product.photo.contentType = photo.type;
+    }
+
+    const savedProduct = await product.save();
+
+    res.status(200).send({
       success: true,
-      message: "Product Updated Successfully",
-      products,
+      message: "Product updated successfully",
+      product: savedProduct,
     });
   } catch (error) {
     console.log(error);
     res.status(500).send({
       success: false,
       error,
-      message: "Error in Updte product",
+      message: "Error in updating product",
     });
   }
 };
+
 
 /**
  * Get products with filter.
