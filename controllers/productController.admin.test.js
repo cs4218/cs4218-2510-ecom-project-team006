@@ -1,4 +1,4 @@
-import { createProductController, deleteProductController } from "../controllers/productController.js";
+import { createProductController, updateProductController, deleteProductController } from "../controllers/productController.js";
 import productModel from "../models/productModel.js";
 import categoryModel from "../models/categoryModel.js";
 import fs from "fs";
@@ -25,6 +25,7 @@ describe("createProductController", () => {
     ["name", "Name is required"],
     ["description", "Description is required"],
     ["price", "Price is required"],
+    ["category", "Category is required"],
     ["quantity", "Quantity is required"],
     ["shipping", "Shipping is required"]
   ])("unsuccessful when %s is missing", async (field, error) => {
@@ -32,6 +33,7 @@ describe("createProductController", () => {
       name: "Test Product",
       description: "Desc",
       price: 10,
+      category: "1",
       quantity: 5,
       shipping: "1",
     };
@@ -47,6 +49,7 @@ describe("createProductController", () => {
     req.fields = {
       name: "Test",
       description: "Desc",
+      category: "1",
       price: 10,
       quantity: 5,
       shipping: 1,
@@ -66,6 +69,7 @@ describe("createProductController", () => {
       name: "Test Product",
       description: "Desc",
       price: 10,
+      category: "1",
       quantity: 5,
       shipping: 1,
     };
@@ -88,9 +92,9 @@ describe("createProductController", () => {
       name: "Test",
       description: "Desc",
       price: 10,
+      category: "1",
       quantity: 5,
       shipping: 1,
-      category: "1",
     };
 
     productModel.findOne.mockResolvedValue(null);
@@ -101,18 +105,18 @@ describe("createProductController", () => {
     expect(categoryModel.findById).toHaveBeenCalledWith(req.fields.category);
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.send).toHaveBeenCalledWith(
-      {"message": "Category with this ID not found", "success": false}
+      {"message": "Category not found", "success": false}
     );
   });
 
-  test("creates product successfully with photo and category", async () => {
+  test("creates product successfully with photo", async () => {
     req.fields = {
       name: "Test Product",
       description: "Desc",
       price: 10,
+      category: "1",
       quantity: 5,
       shipping: 1,
-      category: "1",
     };
     req.files = { photo: { path: "mockpath", type: "image/png" } };
 
@@ -150,16 +154,18 @@ describe("createProductController", () => {
     });
   });
 
-  test("creates product successfully without photo and category", async () => {
+  test("creates product successfully without photo", async () => {
     req.fields = {
       name: "Test Product",
       description: "Desc",
       price: 10,
+      category: "1",
       quantity: 5,
       shipping: 1,
     };
 
     productModel.findOne.mockResolvedValue(null);
+    categoryModel.findById.mockResolvedValue({ _id: "1" });
 
     const savedProduct = {
       ...req.fields,
@@ -174,7 +180,7 @@ describe("createProductController", () => {
 
     await createProductController(req, res);
 
-    expect(fs.readFileSync).not.toHaveBeenCalledWith("mockpath"); 
+    expect(fs.readFileSync).not.toHaveBeenCalled(); 
     expect(productModel).toHaveBeenCalledWith({
       ...req.fields,
       slug: slugify(req.fields.name)
@@ -195,6 +201,7 @@ describe("createProductController", () => {
       name: "Test Product",
       description: "Desc",
       price: 10,
+      category: "1",
       quantity: 5,
       shipping: 1,
     };
@@ -208,9 +215,259 @@ describe("createProductController", () => {
       expect.objectContaining({
         success: false,
         message: "Error in creating product",
-        error: expect.any(Error),
+        error: new Error("DB error"),
       })
     );
+  });
+});
+
+describe("updateProductController", () => {
+  let req, res;
+
+  beforeEach(() => {
+    req = { fields: {}, params: {} , files: {} };
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+    };
+    jest.clearAllMocks();
+  });
+
+
+
+  test("unsuccessful if id param is missing", async () => {
+    await updateProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Product ID is required",
+    });
+  });
+
+  test.each([
+    ["name", "Name is required"],
+    ["description", "Description is required"],
+    ["price", "Price is required"],
+    ["category", "Category is required"],
+    ["quantity", "Quantity is required"],
+    ["shipping", "Shipping is required"]
+  ])("unsuccessful when %s is missing", async (field, error) => {
+    req.params = { pid: "123" };
+    req.fields = {
+      name: "Test Product",
+      description: "Desc",
+      price: 10,
+      category: "1",
+      quantity: 5,
+      shipping: "1",
+    };
+    delete req.fields[field];
+
+    await updateProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith({ error: error });
+  });
+
+  test("unsuccesful if photo size > 1MB", async () => {
+    req.params = { pid: "123" };
+    req.fields = {
+      name: "Test",
+      description: "Desc",
+      category: "1",
+      price: 10,
+      quantity: 5,
+      shipping: 1,
+    };
+    req.files = { photo: { size: 2000000 } };
+
+    await updateProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith(
+      expect.objectContaining({ error: "Photo should be less than 1MB" })
+    );
+  });
+
+  test("unsusccessful if product with same id is not found", async () => {
+    req.params = { pid: "123" };
+    req.fields = {
+      name: "Test",
+      description: "Desc",
+      category: "1",
+      price: 10,
+      quantity: 5,
+      shipping: 1,
+    };
+
+    productModel.findById.mockResolvedValue(null);
+
+    await updateProductController(req, res);
+
+    expect(productModel.findById).toHaveBeenCalledWith("123");
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.send).toHaveBeenCalledWith({
+      success: false,
+      message: "Product not found",
+    });
+  });
+
+  test("unsuccessful if product with same slug exists", async () => {
+    req.params = { pid: "123" };
+    req.fields = {
+      name: "Test Product",
+      description: "Desc",
+      price: 10,
+      category: "1",
+      quantity: 5,
+      shipping: 1,
+    };
+
+    productModel.findById.mockResolvedValue({ _id: "123" });
+    productModel.findOne.mockResolvedValue({ _id: "1" });
+
+    await updateProductController(req, res);
+
+    expect(productModel.findById).toHaveBeenCalledWith("123");
+    expect(productModel.findOne).toHaveBeenCalledWith({ slug: slugify("Test Product") });
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.send).toHaveBeenCalledWith(
+      { message: "Product with this name already exists", success: false }
+    );
+  });
+
+  test("unsuccessful if category is provided but not found", async () => {
+    req.params = { pid: "123" };
+    req.fields = {
+      name: "Test",
+      description: "Desc",
+      price: 10,
+      category: "1",
+      quantity: 5,
+      shipping: 1,
+    };
+
+    productModel.findById.mockResolvedValue({ _id: "123" });
+    productModel.findOne.mockResolvedValue(null);
+    categoryModel.findById.mockResolvedValue(null);
+
+    await updateProductController(req, res);
+
+    expect(categoryModel.findById).toHaveBeenCalledWith("1");
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.send).toHaveBeenCalledWith(
+      {"message": "Category not found", "success": false}
+    );
+  });
+  
+  test("updates product successfully with photo", async () => {
+    req.params = { pid: "123" };
+    req.fields = {
+      name: "Test Product",
+      description: "Desc",
+      price: 10,
+      category: "1",
+      quantity: 5,
+      shipping: 1,
+    };
+    req.files = { photo: { path: "mockpath", type: "image/png" } };
+
+    const savedProduct = {
+      ...req.fields,
+      slug: slugify(req.fields.name),
+      _id: "123"
+    };
+    const saveMock = jest.fn().mockResolvedValue(savedProduct);
+    const product = { _id: "123", photo: {}, save: saveMock };
+    productModel.findById.mockResolvedValue(product);
+    productModel.findOne.mockResolvedValue(null);
+    categoryModel.findById.mockResolvedValue({ _id: "1" });
+    fs.readFileSync.mockReturnValue("mock-binary");
+
+    const assignSpy = jest.spyOn(Object, "assign");
+
+    await updateProductController(req, res);
+
+    expect(assignSpy).toHaveBeenCalledWith(
+      product,
+      { ...req.fields, slug: slugify(req.fields.name) }
+    );
+    expect(fs.readFileSync).toHaveBeenCalledWith("mockpath"); 
+    expect(saveMock).toHaveBeenCalled();
+    const updatedProduct = saveMock.mock.instances[0];
+    expect(updatedProduct.photo.data).toEqual("mock-binary");
+    expect(updatedProduct.photo.contentType).toBe("image/png");
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      message: "Product updated successfully",
+      product: savedProduct
+    });
+  });
+
+    
+  test("updates product successfully without photo", async () => {
+    req.params = { pid: "123" };
+    req.fields = {
+      name: "Test Product",
+      description: "Desc",
+      price: 10,
+      category: "1",
+      quantity: 5,
+      shipping: 1,
+    };
+
+    const savedProduct = {
+      ...req.fields,
+      slug: slugify(req.fields.name),
+      _id: "123"
+    };
+    const saveMock = jest.fn().mockResolvedValue(savedProduct);
+    const product = { _id: "123", photo: {}, save: saveMock };
+    productModel.findById.mockResolvedValue(product);
+    productModel.findOne.mockResolvedValue(null);
+    categoryModel.findById.mockResolvedValue({ _id: "1" });
+    const assignSpy = jest.spyOn(Object, "assign");
+
+    await updateProductController(req, res);
+
+    expect(assignSpy).toHaveBeenCalledWith(
+      product,
+      { ...req.fields, slug: slugify(req.fields.name) }
+    );
+    expect(fs.readFileSync).not.toHaveBeenCalled(); 
+    expect(saveMock).toHaveBeenCalled();
+    const updatedProduct = saveMock.mock.instances[0];
+    expect(updatedProduct.photo).toEqual({});
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      message: "Product updated successfully",
+      product: savedProduct
+    });
+  });
+
+  test("handles server error", async () => {
+    req.params = { pid: "123" };
+    req.fields = {
+      name: "Test",
+      description: "Desc",
+      price: 10,
+      category: "1",
+      quantity: 5,
+      shipping: 1,
+    };
+
+    productModel.findById.mockRejectedValue(new Error("DB error"));
+
+    await updateProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith(expect.objectContaining({
+      success: false,
+      message: "Error in updating product",
+    }));
   });
 });
 
@@ -227,8 +484,6 @@ describe("deleteProductController", () => {
   });
 
   test("unsuccesful if id param is missing", async () => {
-    req.params = {};
-
     await deleteProductController(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
@@ -239,7 +494,7 @@ describe("deleteProductController", () => {
   });
 
   test("unsuccessful if product with same id is not found", async () => {
-    req.params = { id: "1" };
+    req.params = { pid: "1" };
     productModel.findByIdAndDelete.mockResolvedValue(null);
 
     await deleteProductController(req, res);
@@ -253,7 +508,7 @@ describe("deleteProductController", () => {
   });
 
   test("deletes product successfully", async () => {
-    req.params = { id: "1" };
+    req.params = { pid: "1" };
     productModel.findByIdAndDelete.mockResolvedValue({ _id: "1", name: "Product 1" });
 
     await deleteProductController(req, res);
@@ -267,7 +522,7 @@ describe("deleteProductController", () => {
   });
 
   test("handles server error", async () => {
-    req.params = { id: "1" };
+    req.params = { pid: "1" };
     productModel.findByIdAndDelete.mockRejectedValue(new Error("DB error"));
 
     await deleteProductController(req, res);
