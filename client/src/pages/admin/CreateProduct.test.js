@@ -216,6 +216,7 @@ describe("CreateProduct Component", () => {
     expect(screen.queryByAltText("product_photo")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /clear photo/i })).not.toBeInTheDocument();
   });
+
   test("creates product successfully", async () => {
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: mockCategories },
