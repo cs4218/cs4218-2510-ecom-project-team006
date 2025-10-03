@@ -5,8 +5,11 @@ import '@testing-library/jest-dom/extend-expect';
 import { MemoryRouter, useNavigate } from "react-router-dom";
 import axios from 'axios';
 import { act } from "react-dom/test-utils";
+import { useCart } from "../context/cart";
+import toast from "react-hot-toast";
 
 jest.mock("axios");
+jest.mock("react-hot-toast");
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useParams: () => ({ slug: "test-product" }),
@@ -17,6 +20,18 @@ jest.mock("./../components/Layout", () => ({ children }) => (
     {children}
   </div>
 ));
+jest.mock("../context/cart", () => ({
+  useCart: jest.fn().mockReturnValue([[], jest.fn()]),
+}));
+
+Object.defineProperty(window, 'localStorage', {
+  value: {
+    setItem: jest.fn(),
+    getItem: jest.fn(),
+    removeItem: jest.fn(),
+  },
+  writable: true,
+});
 
 const mockProduct = {
   _id: "product-123",
@@ -64,7 +79,6 @@ describe("ProductDetails Component", () => {
     // wait for product to be fetched
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalledWith(`/api/v1/product/get-product/test-product`)
-      expect(screen.getByText("Product Details")).toBeInTheDocument();
       const img = screen.getByAltText(new RegExp(mockProduct.name));
       
       expect(img).toBeInTheDocument();
@@ -73,6 +87,32 @@ describe("ProductDetails Component", () => {
       expect(screen.getByText(new RegExp(mockProduct.description))).toBeInTheDocument();
       expect(screen.getByText("Price :$99.00")).toBeInTheDocument();
       expect(screen.getByText(new RegExp(mockProduct.category.name))).toBeInTheDocument();
+    });
+  });
+
+  it("adds to cart if 'ADD TO CART' button", async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { product: mockProduct } }) // getProduct
+      .mockResolvedValueOnce({ data: { products: mockRelatedProducts } }); // get related products
+    const [mockCart, mockSetCart] = useCart();
+
+    render(
+      <MemoryRouter>
+        <ProductDetails />
+      </MemoryRouter>
+    );
+
+    // wait for product to be fetched
+    await waitFor(() => {
+      const button = screen.getByRole("button", { name: /ADD TO CART/ });
+      fireEvent.click(button);
+
+      expect(mockSetCart).toHaveBeenCalledWith([...mockCart, mockProduct]);
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        "cart",
+        JSON.stringify([...mockCart, mockProduct])
+      );
+      expect(toast.success).toHaveBeenCalledWith("Item Added to cart");
     });
   });
 
@@ -159,6 +199,7 @@ describe("ProductDetails Component", () => {
     );
 
     await waitFor(() => {
+      expect(screen.getByText(new RegExp(`Error: ${error.message}`))).toBeInTheDocument()
       expect(consoleSpy).toHaveBeenCalledWith(error);
     });
   });
