@@ -90,7 +90,7 @@ describe("ProductDetails Component", () => {
     });
   });
 
-  it("adds to cart if 'ADD TO CART' button", async () => {
+  it("adds product to cart if 'ADD TO CART' button is pressed", async () => {
     axios.get
       .mockResolvedValueOnce({ data: { product: mockProduct } }) // getProduct
       .mockResolvedValueOnce({ data: { products: mockRelatedProducts } }); // get related products
@@ -104,8 +104,8 @@ describe("ProductDetails Component", () => {
 
     // wait for product to be fetched
     await waitFor(() => {
-      const button = screen.getByRole("button", { name: /ADD TO CART/ });
-      fireEvent.click(button);
+      const buttons = screen.getAllByRole("button", { name: /ADD TO CART/ });
+      fireEvent.click(buttons[0]); // first add to cart button is for main product
 
       expect(mockSetCart).toHaveBeenCalledWith([...mockCart, mockProduct]);
       expect(localStorage.setItem).toHaveBeenCalledWith(
@@ -168,6 +168,32 @@ describe("ProductDetails Component", () => {
 
       expect(useNavigate()).toHaveBeenCalledWith(`/product/${mockRelatedProducts[0].slug}`);
       expect(useNavigate()).toHaveBeenCalledWith(`/product/${mockRelatedProducts[1].slug}`);
+    });
+  });
+
+  it("adds similar product to cart if 'ADD TO CART' button is pressed", async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { product: mockProduct } }) // getProduct
+      .mockResolvedValueOnce({ data: { products: mockRelatedProducts } }); // get related products
+    const [mockCart, mockSetCart] = useCart();
+
+    render(
+      <MemoryRouter>
+        <ProductDetails />
+      </MemoryRouter>
+    );
+
+    // wait for product to be fetched
+    await waitFor(() => {
+      const buttons = screen.getAllByRole("button", { name: /ADD TO CART/ });
+      fireEvent.click(buttons[1]); // first similar product is button index 1
+
+      expect(mockSetCart).toHaveBeenCalledWith([...mockCart, mockRelatedProducts[0]]);
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        "cart",
+        JSON.stringify([...mockCart, mockRelatedProducts[0]])
+      );
+      expect(toast.success).toHaveBeenCalledWith("Item Added to cart");
     });
   });
 
