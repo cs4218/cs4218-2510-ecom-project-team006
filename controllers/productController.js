@@ -26,21 +26,21 @@ export const createProductController = async (req, res) => {
 
     switch (true) {
       case !name:
-        return res.status(400).send({ error: "Name is required" });
+        return res.status(400).send({ success: false, message: "Name is required" });
       case !description:
-        return res.status(400).send({ error: "Description is required" });
+        return res.status(400).send({success: false, message: "Description is required" });
       case !price:
-        return res.status(400).send({ error: "Price is required" });
+        return res.status(400).send({ success: false, message: "Price is required" });
       case !category:
-        return res.status(400).send({ error: "Category is required" });
+        return res.status(400).send({ success: false, message: "Category is required" });
       case !quantity:
-        return res.status(400).send({ error: "Quantity is required" });
+        return res.status(400).send({ success: false, message: "Quantity is required" });
       case !shipping:
-        return res.status(400).send({ error: "Shipping is required" });
+        return res.status(400).send({ success: false, message: "Shipping is required" });
       case photo && photo.size > 1000000:
         return res
           .status(400)
-          .send({ error: "Photo should be less than 1MB" });
+          .send({ success: false, message: "Photo should be less than 1MB" });
     }
 
     const existingProduct = await productModel.findOne({ slug: slugify(name) });
@@ -237,21 +237,21 @@ export const updateProductController = async (req, res) => {
 
     switch (true) {
       case !name:
-        return res.status(400).send({ error: "Name is required" });
+        return res.status(400).send({ success: false, message: "Name is required" });
       case !description:
-        return res.status(400).send({ error: "Description is required" });
+        return res.status(400).send({ success: false, message: "Description is required" });
       case !price:
-        return res.status(400).send({ error: "Price is required" });
+        return res.status(400).send({ success: false, message: "Price is required" });
       case !category:
-        return res.status(400).send({ error: "Category is required" });
+        return res.status(400).send({ success: false, message: "Category is required" });
       case !quantity:
-        return res.status(400).send({ error: "Quantity is required" });
+        return res.status(400).send({ success: false, message: "Quantity is required" });
       case !shipping:
-        return res.status(400).send({ error: "Shipping is required" });
+        return res.status(400).send({ success: false, message: "Shipping is required" });
       case photo && photo.size > 1000000:
         return res
           .status(400)
-          .send({ error: "Photo should be less than 1MB" });
+          .send({ success: false, message: "Photo should be less than 1MB" });
     }
 
     const product = await productModel.findById(pid);

@@ -42,7 +42,7 @@ describe("createProductController", () => {
     await createProductController(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.send).toHaveBeenCalledWith({ error: error });
+    expect(res.send).toHaveBeenCalledWith({ message: error, success: false });
   });
 
   test("unsuccesful if photo size > 1MB", async () => {
@@ -60,7 +60,7 @@ describe("createProductController", () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith(
-      expect.objectContaining({ error: "Photo should be less than 1MB" })
+      expect.objectContaining({ message: "Photo should be less than 1MB", success: false })
     );
   });
 
@@ -267,7 +267,7 @@ describe("updateProductController", () => {
     await updateProductController(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.send).toHaveBeenCalledWith({ error: error });
+    expect(res.send).toHaveBeenCalledWith({ message: error, success: false });
   });
 
   test("unsuccesful if photo size > 1MB", async () => {
@@ -286,7 +286,7 @@ describe("updateProductController", () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith(
-      expect.objectContaining({ error: "Photo should be less than 1MB" })
+      expect.objectContaining({ message: "Photo should be less than 1MB", success: false })
     );
   });
 
