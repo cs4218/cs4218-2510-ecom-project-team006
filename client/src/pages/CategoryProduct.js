@@ -3,32 +3,59 @@ import Layout from "../components/Layout";
 import { useParams, useNavigate } from "react-router-dom";
 import "../styles/CategoryProductStyles.css";
 import axios from "axios";
+import { useCart } from "../context/cart";
+import toast from "react-hot-toast";
+
 const CategoryProduct = () => {
   const params = useParams();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
-  const [category, setCategory] = useState([]);
+  const [category, setCategory] = useState({});
+  const [error, setError] = useState("");
+  const [cart, setCart] = useCart();
 
   useEffect(() => {
-    if (params?.slug) getPrductsByCat();
+    if (params?.slug) getProductsByCat();
   }, [params?.slug]);
-  const getPrductsByCat = async () => {
+
+  const getProductsByCat = async () => {
+    setError("");
+    setProducts([])
+    setCategory({})
     try {
       const { data } = await axios.get(
         `/api/v1/product/product-category/${params.slug}`
       );
-      setProducts(data?.products);
-      setCategory(data?.category);
+      setProducts(data?.products || []);
+      setCategory(data?.category || {});
     } catch (error) {
       console.log(error);
+      setError(error.message);
+    }
+  };
+
+  const addToCart = (product) => {
+    if (product) {
+      setCart([...cart, product]);
+      localStorage.setItem(
+        "cart",
+        JSON.stringify([...cart, product])
+      );
+      toast.success("Item Added to cart");
     }
   };
 
   return (
     <Layout>
       <div className="container mt-3 category">
-        <h4 className="text-center">Category - {category?.name}</h4>
-        <h6 className="text-center">{products?.length} result found </h6>
+        {
+          error 
+            ? <h4 className="text-center">Error: {error}</h4>
+            : <>
+              <h4 className="text-center">Category - {category?.name}</h4>
+              <h6 className="text-center">{products?.length} result found </h6>
+            </>
+        }
         <div className="row">
           <div className="col-md-9 offset-1">
             <div className="d-flex flex-wrap">
@@ -59,37 +86,15 @@ const CategoryProduct = () => {
                       >
                         More Details
                       </button>
-                      {/* <button
-                    className="btn btn-dark ms-1"
-                    onClick={() => {
-                      setCart([...cart, p]);
-                      localStorage.setItem(
-                        "cart",
-                        JSON.stringify([...cart, p])
-                      );
-                      toast.success("Item Added to cart");
-                    }}
-                  >
-                    ADD TO CART
-                  </button> */}
+                      <button
+                        className="btn btn-dark ms-1"
+                        onClick={() => addToCart(p)}
+                      >ADD TO CART</button>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            {/* <div className="m-2 p-3">
-            {products && products.length < total && (
-              <button
-                className="btn btn-warning"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setPage(page + 1);
-                }}
-              >
-                {loading ? "Loading ..." : "Loadmore"}
-              </button>
-            )}
-          </div> */}
           </div>
         </div>
       </div>
