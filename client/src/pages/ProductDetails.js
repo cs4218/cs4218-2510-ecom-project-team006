@@ -129,6 +129,10 @@ const ProductDetails = () => {
                   >
                     More Details
                   </button>
+                  <button 
+                    className="btn btn-secondary ms-1"
+                    onClick={() => addToCart(p)}
+                  >ADD TO CART</button>
                 </div>
               </div>
             </div>

@@ -3,12 +3,16 @@ import Layout from "../components/Layout";
 import { useParams, useNavigate } from "react-router-dom";
 import "../styles/CategoryProductStyles.css";
 import axios from "axios";
+import { useCart } from "../context/cart";
+import toast from "react-hot-toast";
+
 const CategoryProduct = () => {
   const params = useParams();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [category, setCategory] = useState({});
   const [error, setError] = useState("");
+  const [cart, setCart] = useCart();
 
   useEffect(() => {
     if (params?.slug) getProductsByCat();
@@ -30,10 +34,20 @@ const CategoryProduct = () => {
     }
   };
 
+  const addToCart = (product) => {
+    if (product) {
+      setCart([...cart, product]);
+      localStorage.setItem(
+        "cart",
+        JSON.stringify([...cart, product])
+      );
+      toast.success("Item Added to cart");
+    }
+  };
+
   return (
     <Layout>
       <div className="container mt-3 category">
-
         {
           error 
             ? <h4 className="text-center">Error: {error}</h4>
@@ -72,6 +86,10 @@ const CategoryProduct = () => {
                       >
                         More Details
                       </button>
+                      <button
+                        className="btn btn-dark ms-1"
+                        onClick={() => addToCart(p)}
+                      >ADD TO CART</button>
                     </div>
                   </div>
                 </div>

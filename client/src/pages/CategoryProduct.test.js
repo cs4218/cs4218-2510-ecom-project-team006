@@ -4,8 +4,11 @@ import '@testing-library/jest-dom/extend-expect';
 import { MemoryRouter, useNavigate } from "react-router-dom";
 import axios from 'axios';
 import CategoryProduct from "./CategoryProduct";
+import toast from "react-hot-toast";
+import { useCart } from "../context/cart";
 
 jest.mock("axios");
+jest.mock("react-hot-toast");
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useParams: () => ({ slug: "category-a" }),
@@ -16,6 +19,18 @@ jest.mock("./../components/Layout", () => ({ children }) => (
     {children}
   </div>
 ));
+jest.mock("../context/cart", () => ({
+  useCart: jest.fn().mockReturnValue([[], jest.fn()]),
+}));
+
+Object.defineProperty(window, 'localStorage', {
+  value: {
+    setItem: jest.fn(),
+    getItem: jest.fn(),
+    removeItem: jest.fn(),
+  },
+  writable: true,
+});
 
 const mockProducts = [
   {
@@ -95,6 +110,31 @@ describe("CategoryProduct Component", () => {
 
       expect(useNavigate()).toHaveBeenCalledWith(`/product/${mockProducts[0].slug}`);
       expect(useNavigate()).toHaveBeenCalledWith(`/product/${mockProducts[1].slug}`);
+    });
+  });
+
+  it("adds to cart if 'ADD TO CART' button is pressed", async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { products: mockProducts, category: mockCategory } }); // get product-category
+    const [mockCart, mockSetCart] = useCart();
+
+    render(
+      <MemoryRouter>
+        <CategoryProduct />
+      </MemoryRouter>
+    );
+
+    // wait for product to be fetched
+    await waitFor(() => {
+      const buttons = screen.getAllByRole("button", { name: /ADD TO CART/ });
+      fireEvent.click(buttons[0]); // test add product 1
+
+      expect(mockSetCart).toHaveBeenCalledWith([...mockCart, mockProducts[0]]);
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        "cart",
+        JSON.stringify([...mockCart, mockProducts[0]])
+      );
+      expect(toast.success).toHaveBeenCalledWith("Item Added to cart");
     });
   });
 
