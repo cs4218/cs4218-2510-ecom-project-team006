@@ -60,9 +60,7 @@ describe("CreateCategory Component", () => {
   });
 
   test("handles fetch categories unsuccessful", async () => {
-    axios.get.mockResolvedValueOnce({
-      data: { success: false, category: mockCategories },
-    });
+    axios.get.mockResolvedValueOnce({ data: { success: false}});
 
     render(<CreateCategory />);
 
@@ -80,6 +78,8 @@ describe("CreateCategory Component", () => {
 
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalledWith(getCategoryURL);
+      expect(screen.queryByText(mockCategoryName1)).not.toBeInTheDocument();
+      expect(screen.queryByText(mockCategoryName2)).not.toBeInTheDocument();
       expect(toast.error).toHaveBeenCalledWith("Something went wrong");
     });
   });
