@@ -24,6 +24,9 @@ jest.mock("../../components/Layout", () => ({ children }) => (
   <div>{children}</div>
 ));
 
+// Mock AdminMenu
+jest.mock("../../components/AdminMenu", () => () => <div>AdminMenuMock</div>);
+
 // URLs
 const getCategoryURL = "/api/v1/category/get-category";
 const createProductURL = "/api/v1/product/create-product";
@@ -51,9 +54,6 @@ mockProduct.append("description", mockProductDescription);
 mockProduct.append("price", mockProductPrice);
 mockProduct.append("quantity", mockProductQuantity);
 mockProduct.append("shipping", mockProductShipping);
-
-// Mock AdminMenu
-jest.mock("../../components/AdminMenu", () => () => <div>AdminMenuMock</div>);
 
 describe("CreateProduct Component", () => {
   beforeEach(() => {
