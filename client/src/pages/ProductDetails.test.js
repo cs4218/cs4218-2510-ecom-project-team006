@@ -1,0 +1,185 @@
+import React from "react";
+import ProductDetails from "./ProductDetails";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import '@testing-library/jest-dom/extend-expect';
+import { MemoryRouter, useNavigate } from "react-router-dom";
+import axios from 'axios';
+import { act } from "react-dom/test-utils";
+
+jest.mock("axios");
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useParams: () => ({ slug: "test-product" }),
+  useNavigate: jest.fn().mockReturnValue(jest.fn()),
+}));
+jest.mock("./../components/Layout", () => ({ children }) => (
+  <div data-testid="layout">
+    {children}
+  </div>
+));
+
+const mockProduct = {
+  _id: "product-123",
+  name: "Test Product",
+  description: "Test product description",
+  price: 99,
+  category: { _id: "cat-123", name: "Category A" },
+  slug: "test-product",
+};
+
+const mockRelatedProducts = [
+  {
+    _id: "product-456",
+    name: "Related Product 1",
+    description: "Related product description 1",
+    price: 20,
+    slug: "related-product-1",
+  },
+  {
+    _id: "product-789",
+    name: "Related Product 2",
+    description: "Related product description 2",
+    price: 40,
+    slug: "related-product-2",
+  },
+];
+
+describe("ProductDetails Component", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("renders product details & image if product fetched successfully", async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { product: mockProduct } }) // getProduct
+      .mockResolvedValueOnce({ data: { products: mockRelatedProducts } }); // get related products
+
+    render(
+      <MemoryRouter>
+        <ProductDetails />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText("Product Details")).toBeInTheDocument();
+    // wait for product to be fetched
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith(`/api/v1/product/get-product/test-product`)
+      expect(screen.getByText("Product Details")).toBeInTheDocument();
+      const img = screen.getByAltText(new RegExp(mockProduct.name));
+      
+      expect(img).toBeInTheDocument();
+      expect(img).toHaveAttribute("src", `/api/v1/product/product-photo/${mockProduct._id}`);
+      expect(screen.getByText(new RegExp(mockProduct.name))).toBeInTheDocument();
+      expect(screen.getByText(new RegExp(mockProduct.description))).toBeInTheDocument();
+      expect(screen.getByText("Price :$99.00")).toBeInTheDocument();
+      expect(screen.getByText(new RegExp(mockProduct.category.name))).toBeInTheDocument();
+    });
+  });
+
+  it("renders related product details & image if fetched successfully", async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { product: mockProduct } }) // getProduct
+      .mockResolvedValueOnce({ data: { products: mockRelatedProducts } }); // get related products
+
+    render(
+      <MemoryRouter>
+        <ProductDetails />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText("Similar Products ➡️")).toBeInTheDocument();
+    // wait for product to be fetched
+    await waitFor(() => {
+      expect(axios.get)
+        .toHaveBeenCalledWith(`/api/v1/product/related-product/${mockProduct._id}/${mockProduct.category._id}`)
+      // related product 1
+      const img1 = screen.getByAltText(new RegExp(mockRelatedProducts[0].name));
+      expect(img1).toBeInTheDocument();
+      expect(img1).toHaveAttribute("src", `/api/v1/product/product-photo/${mockRelatedProducts[0]._id}`);
+      expect(screen.getByText(new RegExp(mockRelatedProducts[0].name))).toBeInTheDocument();
+      expect(screen.getByText("$20.00")).toBeInTheDocument();
+      expect(screen.getByText(`${mockRelatedProducts[0].description.substring(0, 60)}...`))
+      // related product 2
+      const img2 = screen.getByAltText(new RegExp(mockRelatedProducts[1].name));
+      expect(img2).toBeInTheDocument();
+      expect(img2).toHaveAttribute("src", `/api/v1/product/product-photo/${mockRelatedProducts[1]._id}`);
+      expect(screen.getByText(new RegExp(mockRelatedProducts[1].name))).toBeInTheDocument();
+      expect(screen.getByText("$40.00")).toBeInTheDocument();
+      expect(screen.getByText(`${mockRelatedProducts[1].description.substring(0, 60)}...`))
+    });
+  });
+
+  it("navigates to similar products if 'More Details' button pressed", async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { product: mockProduct } }) // getProduct
+      .mockResolvedValueOnce({ data: { products: mockRelatedProducts } }); // get related products
+
+    render(
+      <MemoryRouter>
+        <ProductDetails />
+      </MemoryRouter>
+    );
+
+    // wait for product to be fetched
+    await waitFor(() => {
+      const buttons = screen.getAllByRole("button", { name: /More Details/ });
+      fireEvent.click(buttons[0]);
+      fireEvent.click(buttons[1]);
+
+      expect(useNavigate()).toHaveBeenCalledWith(`/product/${mockRelatedProducts[0].slug}`);
+      expect(useNavigate()).toHaveBeenCalledWith(`/product/${mockRelatedProducts[1].slug}`);
+    });
+  });
+
+  it("renders no similar products if fetched successfully & empty", async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { product: mockProduct } }) // getProduct
+      .mockResolvedValueOnce({ data: { products: [] } }); // get related products
+
+    await act(async () => render(
+      <MemoryRouter>
+        <ProductDetails />
+      </MemoryRouter>
+    ));
+
+    await waitFor(() => {
+      expect(screen.getByText("No Similar Products found")).toBeInTheDocument();
+    });
+  });
+  
+  it("handles error when fetching product fails", async () => {
+    const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const error = new Error("Product fetch failed");
+    axios.get.mockRejectedValueOnce(error);
+
+    render(
+      <MemoryRouter>
+        <ProductDetails />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith(error);
+    });
+  });
+  
+  it("handles error when fetching related products fails", async () => {
+    const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const error = new Error("Related fetch failed");
+    // First call resolves product
+    axios.get.mockResolvedValueOnce({ data: { product: mockProduct } });
+    // Second call rejects
+    axios.get.mockRejectedValueOnce(error);
+
+    render(
+      <MemoryRouter>
+        <ProductDetails />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith(error);
+    });
+
+  });
+})
