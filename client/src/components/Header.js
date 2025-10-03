@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/auth";
 import toast from "react-hot-toast";
 import SearchInput from "./Form/SearchInput";
@@ -8,6 +8,7 @@ import { useCart } from "../context/cart";
 import { Badge } from "antd";
 import "../styles/Header.css";
 const Header = () => {
+  const location = useLocation();
   const [auth, setAuth] = useAuth();
   const [cart] = useCart();
   const categories = useCategory();
@@ -47,13 +48,19 @@ const Header = () => {
                 </NavLink>
               </li>
               <li className="nav-item dropdown">
-                <Link
-                  className="nav-link dropdown-toggle"
+                <NavLink
                   to={"/categories"}
+                  className={({ isActive }) =>
+                    `nav-link dropdown-toggle ${
+                      isActive || location.pathname.startsWith("/category/")
+                        ? "active"
+                        : ""
+                    }`
+                  }
                   data-bs-toggle="dropdown"
                 >
                   Categories
-                </Link>
+                </NavLink>
                 <ul className="dropdown-menu">
                   <li>
                     <Link className="dropdown-item" to={"/categories"}>
@@ -91,8 +98,7 @@ const Header = () => {
                   <li className="nav-item dropdown">
                     <NavLink
                       className="nav-link dropdown-toggle"
-                      href="#"
-                      role="button"
+                      to={`/dashboard/${auth?.user?.role === 1 ? "admin" : "user"}`}
                       data-bs-toggle="dropdown"
                       style={{ border: "none" }}
                     >
