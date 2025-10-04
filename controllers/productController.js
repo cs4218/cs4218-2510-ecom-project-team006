@@ -161,12 +161,7 @@ export const productPhotoController = async (req, res) => {
       .findById(req.params.pid)
       .select("photo");
     
-    if (product === null) {
-      return res.status(404).send({
-        success: false,
-        error: "Product not found",
-      });
-    } else if (!product.photo?.data) {
+    if (!product?.photo?.data) {
       return res.status(404).send({
         success: false,
         error: "Product photo not found",
@@ -432,11 +427,10 @@ export const searchProductController = async (req, res) => {
 
 /**
  * Gets up to 3 other products in the same category.
- * TODO fix name to *relatedProductController*
  * @param {*} req 
  * @param {*} res 
  */
-export const realtedProductController = async (req, res) => {
+export const relatedProductController = async (req, res) => {
   try {
     const { pid, cid } = req.params;
     if (!pid || !cid) {
@@ -476,9 +470,17 @@ export const productCategoryController = async (req, res) => {
       return res.status(400).send({
         success: false,
         error: "Category slug param is required",
-      })
+      });
     }
+
     const category = await categoryModel.findOne({ slug });
+    if (!category) {
+      return res.status(404).send({
+        success: false,
+        error: "Category not found",
+      });
+    }
+
     const products = await productModel
       .find({ category })
       .populate("category");
