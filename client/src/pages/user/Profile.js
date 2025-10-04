@@ -34,7 +34,7 @@ const Profile = () => {
         phone,
         address,
       });
-      if (data?.errro) {
+      if (data?.error) {
         toast.error(data?.error);
       } else {
         setAuth({ ...auth, user: data?.updatedUser });
@@ -66,7 +66,7 @@ const Profile = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="form-control"
-                    id="exampleInputEmail1"
+                    id="name-input"
                     placeholder="Enter Your Name"
                     autoFocus
                   />
@@ -77,7 +77,7 @@ const Profile = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="form-control"
-                    id="exampleInputEmail1"
+                    id="email-input"
                     placeholder="Enter Your Email "
                     disabled
                   />
@@ -88,7 +88,7 @@ const Profile = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="form-control"
-                    id="exampleInputPassword1"
+                    id="password-input"
                     placeholder="Enter Your Password"
                   />
                 </div>
@@ -98,7 +98,7 @@ const Profile = () => {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="form-control"
-                    id="exampleInputEmail1"
+                    id="phone-input"
                     placeholder="Enter Your Phone"
                   />
                 </div>
@@ -108,7 +108,7 @@ const Profile = () => {
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     className="form-control"
-                    id="exampleInputEmail1"
+                    id="address-input"
                     placeholder="Enter Your Address"
                   />
                 </div>
