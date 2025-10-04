@@ -4,6 +4,8 @@ import orderModel from "../models/orderModel.js";
 import { comparePassword, hashPassword } from "./../helpers/authHelper.js";
 import JWT from "jsonwebtoken";
 
+// AI attribution: Some improvements are made with the help of OpenAI ChatGPT(GPT-5) via cursor.
+
 export const registerController = async (req, res) => {
   try {
     const { name, email, password, phone, address, answer } = req.body;
@@ -164,15 +166,25 @@ export const testController = (req, res) => {
   }
 };
 
-//update prfole
+//update profile
 export const updateProfileController = async (req, res) => {
   try {
     const { name, email, password, address, phone } = req.body;
+    
+    // Check if user exists
     const user = await userModel.findById(req.user._id);
-    //password
-    if (password && password.length < 6) {
-      return res.json({ error: "Passsword is required and 6 character long" });
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        error: "User not found" 
+      });
     }
+    
+    //password validation
+    if (password && password.length < 6) {
+      return res.json({ error: "Password is required and 6 character long" });
+    }
+    
     const hashedPassword = password ? await hashPassword(password) : undefined;
     const updatedUser = await userModel.findByIdAndUpdate(
       req.user._id,
@@ -186,14 +198,14 @@ export const updateProfileController = async (req, res) => {
     );
     res.status(200).send({
       success: true,
-      message: "Profile Updated SUccessfully",
+      message: "Profile Updated Successfully",
       updatedUser,
     });
   } catch (error) {
     console.log(error);
     res.status(400).send({
       success: false,
-      message: "Error WHile Update profile",
+      message: "Error While Update profile",
       error,
     });
   }
@@ -206,12 +218,21 @@ export const getOrdersController = async (req, res) => {
       .find({ buyer: req.user._id })
       .populate("products", "-photo")
       .populate("buyer", "name");
+    
+    if (orders.length === 0) {
+      return res.json({ 
+        success: true, 
+        message: "No orders found", 
+        orders: [] 
+      });
+    }
+    
     res.json(orders);
   } catch (error) {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error WHile Geting Orders",
+      message: "Error While Getting Orders",
       error,
     });
   }
@@ -224,12 +245,21 @@ export const getAllOrdersController = async (req, res) => {
       .populate("products", "-photo")
       .populate("buyer", "name")
       .sort({ createdAt: -1 });
+    
+    if (orders.length === 0) {
+      return res.json({ 
+        success: true, 
+        message: "No orders found", 
+        orders: [] 
+      });
+    }
+    
     res.json(orders);
   } catch (error) {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error WHile Geting Orders",
+      message: "Error While Getting Orders",
       error,
     });
   }
@@ -240,17 +270,41 @@ export const orderStatusController = async (req, res) => {
   try {
     const { orderId } = req.params;
     const { status } = req.body;
-    const orders = await orderModel.findByIdAndUpdate(
+    
+    // Validate status value
+    const validStatuses = ["Not Process", "Processing", "Shipped", "Delivered", "Cancelled"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Invalid status value. Valid statuses: " + validStatuses.join(", ") 
+      });
+    }
+    
+    // Check if order exists
+    const existingOrder = await orderModel.findById(orderId);
+    if (!existingOrder) {
+      return res.status(404).json({ 
+        success: false, 
+        error: "Order not found" 
+      });
+    }
+    
+    const order = await orderModel.findByIdAndUpdate(
       orderId,
       { status },
       { new: true }
     );
-    res.json(orders);
+    
+    res.json({
+      success: true,
+      message: "Order status updated successfully",
+      order
+    });
   } catch (error) {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error While Updateing Order",
+      message: "Error While Updating Order",
       error,
     });
   }
