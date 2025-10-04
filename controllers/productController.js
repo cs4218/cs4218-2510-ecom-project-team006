@@ -427,11 +427,10 @@ export const searchProductController = async (req, res) => {
 
 /**
  * Gets up to 3 other products in the same category.
- * TODO fix name to *relatedProductController*
  * @param {*} req 
  * @param {*} res 
  */
-export const realtedProductController = async (req, res) => {
+export const relatedProductController = async (req, res) => {
   try {
     const { pid, cid } = req.params;
     if (!pid || !cid) {
