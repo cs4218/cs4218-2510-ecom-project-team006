@@ -4,6 +4,7 @@ import Layout from "./../../components/Layout";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+
 const Products = () => {
   const [products, setProducts] = useState([]);
 
@@ -11,10 +12,12 @@ const Products = () => {
   const getAllProducts = async () => {
     try {
       const { data } = await axios.get("/api/v1/product/get-product");
-      setProducts(data.products);
+      if (data?.success) {
+        setProducts(data.products);
+      }
     } catch (error) {
       console.log(error);
-      toast.error("Someething Went Wrong");
+      toast.error(error.response?.data?.message ?? "Something went wrong");
     }
   };
 
@@ -22,6 +25,7 @@ const Products = () => {
   useEffect(() => {
     getAllProducts();
   }, []);
+
   return (
     <Layout>
       <div className="row">
@@ -30,7 +34,7 @@ const Products = () => {
         </div>
         <div className="col-md-9 ">
           <h1 className="text-center">All Products List</h1>
-          <div className="d-flex">
+          <div className="d-flex flex-wrap">
             {products?.map((p) => (
               <Link
                 key={p._id}
