@@ -43,19 +43,23 @@ describe('SearchInput base behavior', () => {
   });
 
   test('submit calls axios with keyword, updates results, then navigates', async () => {
-    mockValues = { keyword: 'laptop', results: [] };
-    const mockData = [{ _id: '1', name: 'X' }];
-    axios.get.mockResolvedValueOnce({ data: mockData });
+  mockValues = { keyword: 'laptop', results: [] };
+  const mockData = { success: true, products: [{ _id: '1', name: 'X' }] };
+  axios.get.mockResolvedValueOnce({ data: mockData });
 
-    renderComp();
-    fireEvent.submit(screen.getByRole('search')); // the <form> has role="search"
+  renderComp();
+  fireEvent.submit(screen.getByRole('search'));
 
-    await waitFor(() => {
-      expect(axios.get).toHaveBeenCalledWith('/api/v1/product/search/laptop');
-      expect(mockSetValues).toHaveBeenCalledWith({ ...mockValues, results: mockData });
-      expect(mockNavigate).toHaveBeenCalledWith('/search');
+  await waitFor(() => {
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/product/search/laptop');
+    expect(mockSetValues).toHaveBeenCalledWith({
+      ...mockValues,
+      results: mockData.products, 
     });
+    expect(mockNavigate).toHaveBeenCalledWith('/search');
   });
+});
+
 
   test('submit logs error and does not navigate on failure', async () => {
     mockValues = { keyword: 'phone', results: [] };
