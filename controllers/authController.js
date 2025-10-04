@@ -309,3 +309,21 @@ export const orderStatusController = async (req, res) => {
     });
   }
 };
+
+export const allUsersController = async (req, res) => {
+  try {
+    const users = await userModel.find({}).select("-password").sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      message: "All users fetched successfully",
+      users
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Error While getting users",
+      error,
+    }); 
+  }
+};
