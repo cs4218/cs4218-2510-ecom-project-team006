@@ -3,45 +3,37 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import AdminMenu from "../../components/AdminMenu";
 import Layout from "../../components/Layout";
-import { useAuth } from "../../context/auth";
 import moment from "moment";
 import { Select } from "antd";
 const { Option } = Select;
 
 const AdminOrders = () => {
-  const [status, setStatus] = useState([
-    "Not Process",
-    "Processing",
-    "Shipped",
-    "deliverd",
-    "cancel",
-  ]);
-  const [changeStatus, setCHangeStatus] = useState("");
   const [orders, setOrders] = useState([]);
-  const [auth, setAuth] = useAuth();
+
   const getOrders = async () => {
     try {
       const { data } = await axios.get("/api/v1/auth/all-orders");
       setOrders(data);
     } catch (error) {
       console.log(error);
+      toast.error("Something went wrong");
     }
   };
 
   useEffect(() => {
-    if (auth?.token) getOrders();
-  }, [auth?.token]);
+    getOrders();
+  }, []);
 
   const handleChange = async (orderId, value) => {
     try {
-      const { data } = await axios.put(`/api/v1/auth/order-status/${orderId}`, {
-        status: value,
-      });
-      getOrders();
+      await axios.put(`/api/v1/auth/order-status/${orderId}`, { status: value });
+      toast.success("Order status updated");
     } catch (error) {
       console.log(error);
+      toast.error("Something went wrong");
     }
   };
+
   return (
     <Layout title={"All Orders Data"}>
       <div className="row dashboard">
@@ -52,14 +44,14 @@ const AdminOrders = () => {
           <h1 className="text-center">All Orders</h1>
           {orders?.map((o, i) => {
             return (
-              <div className="border shadow">
+              <div key={o._id} className="border shadow">
                 <table className="table">
                   <thead>
                     <tr>
                       <th scope="col">#</th>
                       <th scope="col">Status</th>
                       <th scope="col">Buyer</th>
-                      <th scope="col"> date</th>
+                      <th scope="col">Date</th>
                       <th scope="col">Payment</th>
                       <th scope="col">Quantity</th>
                     </tr>
@@ -69,15 +61,15 @@ const AdminOrders = () => {
                       <td>{i + 1}</td>
                       <td>
                         <Select
-                          bordered={false}
+                          variant="outlined"
                           onChange={(value) => handleChange(o._id, value)}
                           defaultValue={o?.status}
                         >
-                          {status.map((s, i) => (
-                            <Option key={i} value={s}>
-                              {s}
-                            </Option>
-                          ))}
+                          <Option value="Not Processed">Not Processed</Option>
+                          <Option value="Processing">Processing</Option>
+                          <Option value="Shipped">Shipped</Option>
+                          <Option value="Delivered">Delivered</Option>
+                          <Option value="Cancel">Cancel</Option>
                         </Select>
                       </td>
                       <td>{o?.buyer?.name}</td>
