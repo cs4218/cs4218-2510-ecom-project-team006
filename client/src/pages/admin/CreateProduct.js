@@ -16,7 +16,7 @@ const CreateProduct = () => {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [shipping, setShipping] = useState("0");
+  const [shipping, setShipping] = useState(false);
 
   //get all category
   const getAllCategory = async () => {
@@ -183,8 +183,8 @@ const CreateProduct = () => {
                       setShipping(value);
                     }}
                   >
-                    <Option value="0">No</Option>
-                    <Option value="1">Yes</Option>
+                    <Option value={false}>No</Option>
+                    <Option value={true}>Yes</Option>
                   </Select>
                 </div>
                 <div className="mb-3">

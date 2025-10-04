@@ -45,7 +45,7 @@ const mockProductName = "Test Product";
 const mockProductDescription = "Test description";
 const mockProductPrice = "100";
 const mockProductQuantity = "5";
-const mockProductShipping = "1";
+const mockProductShipping = true;
 const mockProduct = new FormData();
 mockProduct.append("category", mockProductCategory);
 mockProduct.append("photo", mockProductPhoto);
