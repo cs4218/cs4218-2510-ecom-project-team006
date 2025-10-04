@@ -44,12 +44,11 @@ const mockCategories = [mockCategory1, mockCategory2];
 
 // Mock product
 const mockProductCategory = { _id: mockCategory1._id };
-const mockProductPhoto = new File(["dummy content"], "example.png", { type: "image/png" });
 const mockProductName = "Test Product";
 const mockProductDescription = "Test description";
 const mockProductPrice = "100";
 const mockProductQuantity = "5";
-const mockProductShipping = "1";
+const mockProductShipping = true;
 const mockProductID = "123";
 const mockProduct = {
   _id: mockProductID,
@@ -74,7 +73,7 @@ const updatedProductName = "Updated Product";
 const updatedProductDescription = "Updated description";
 const updatedProductPrice = "150";
 const updatedProductQuantity = "10";
-const updatedProductShipping = "0";
+const updatedProductShipping = false;
 const updatedProduct = new FormData();
 updatedProduct.append("category", updatedProductCategory._id);
 updatedProduct.append("photo", updatedProductPhoto);
@@ -533,51 +532,107 @@ describe("UpdateProduct Component", () => {
     });
   });
 
-  // test("deletes product successfully", async () => {
-  //   axios.get.mockResolvedValue({ data: { success: true, product: mockProduct } });
-  //   axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
-  //   axios.head.mockResolvedValue({ status: 200 });
-  //   axios.delete.mockResolvedValue({ data: { success: true, message: "Deleted" } });
+  test("handles delete cancellation", async () => {
+    jest.spyOn(window, "confirm").mockReturnValue(false);
 
-  //   // Mock window.confirm
-  //   jest.spyOn(window, "confirm").mockReturnValue(true);
+    render(
+      <MemoryRouter>
+        <UpdateProduct />
+      </MemoryRouter>
+    );
 
-  //   render(
-  //     <MemoryRouter>
-  //       <UpdateProduct />
-  //     </MemoryRouter>
-  //   );
+    fireEvent.click(screen.getByRole("button", { name: /delete product/i }));
 
-  //   await waitFor(() => screen.getByDisplayValue(mockProduct.name));
+    await waitFor(() => {
+      expect(axios.delete).not.toHaveBeenCalled();
+    });
+  });
 
-  //   fireEvent.click(screen.getByRole("button", { name: /delete product/i }));
+  test("deletes product successfully", async () => {
+    axios.get.mockImplementation((url) => {
+      if (url.includes("/get-product/")) {
+        return Promise.resolve({ data: { success: true, product: mockProduct } });
+      } else if (url.includes("/get-category")) {
+        return Promise.resolve({ data: { success: true, category: mockCategories } });
+      }
+    });
+    axios.head.mockResolvedValue({ status: 200 }); 
+    axios.delete.mockResolvedValue({ data: { success: true, message: "Deleted product successfully" } });
 
-  //   await waitFor(() => {
-  //     expect(axios.delete).toHaveBeenCalledWith(`/api/v1/product/delete-product/${mockProduct._id}`);
-  //     expect(toast.success).toHaveBeenCalledWith("Deleted");
-  //     expect(mockNavigate).toHaveBeenCalledWith("/dashboard/admin/products");
-  //   });
-  // });
+    jest.spyOn(window, "confirm").mockReturnValue(true);
 
-  // test("handles delete cancellation", async () => {
-  //   axios.get.mockResolvedValue({ data: { success: true, product: mockProduct } });
-  //   axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
-  //   axios.head.mockResolvedValue({ status: 200 });
+    render(
+      <MemoryRouter>
+        <UpdateProduct />
+      </MemoryRouter>
+    );
 
-  //   jest.spyOn(window, "confirm").mockReturnValue(false);
+    await waitFor(() => screen.getByDisplayValue(mockProduct.name));
 
-  //   render(
-  //     <MemoryRouter>
-  //       <UpdateProduct />
-  //     </MemoryRouter>
-  //   );
+    fireEvent.click(screen.getByRole("button", { name: /delete product/i }));
 
-  //   await waitFor(() => screen.getByDisplayValue(mockProduct.name));
+    await waitFor(() => {
+      expect(axios.delete).toHaveBeenCalledWith(deleteProductURL(mockProduct._id));
+      expect(toast.success).toHaveBeenCalledWith("Deleted product successfully");
+      expect(mockNavigate).toHaveBeenCalledWith("/dashboard/admin/products");
+    });
+  });
 
-  //   fireEvent.click(screen.getByRole("button", { name: /delete product/i }));
+  test("handles delete product error", async () => {
+    axios.get.mockImplementation((url) => {
+      if (url.includes("/get-product/")) {
+        return Promise.resolve({ data: { success: true, product: mockProduct } });
+      } else if (url.includes("/get-category")) {
+        return Promise.resolve({ data: { success: true, category: mockCategories } });
+      }
+    });
+    axios.head.mockResolvedValue({ status: 200 }); 
+    axios.delete.mockResolvedValue({ data: { success: false, message: "Delete failed" } });
 
-  //   await waitFor(() => {
-  //     expect(axios.delete).not.toHaveBeenCalled();
-  //   });
-  // });
+    jest.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(
+      <MemoryRouter>
+        <UpdateProduct />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => screen.getByDisplayValue(mockProduct.name));
+
+    fireEvent.click(screen.getByRole("button", { name: /delete product/i }));
+
+    await waitFor(() => {
+      expect(axios.delete).toHaveBeenCalledWith(deleteProductURL(mockProduct._id));
+      expect(toast.error).toHaveBeenCalledWith("Delete failed");
+    });
+  });
+
+  test("handles delete product error", async () => {
+    axios.get.mockImplementation((url) => {
+      if (url.includes("/get-product/")) {
+        return Promise.resolve({ data: { success: true, product: mockProduct } });
+      } else if (url.includes("/get-category")) {
+        return Promise.resolve({ data: { success: true, category: mockCategories } });
+      }
+    });
+    axios.head.mockResolvedValue({ status: 200 }); 
+    axios.delete.mockRejectedValueOnce(new Error("Network Error"));
+
+    jest.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(
+      <MemoryRouter>
+        <UpdateProduct />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => screen.getByDisplayValue(mockProduct.name));
+
+    fireEvent.click(screen.getByRole("button", { name: /delete product/i }));
+
+    await waitFor(() => {
+      expect(axios.delete).toHaveBeenCalledWith(deleteProductURL(mockProduct._id));
+      expect(toast.error).toHaveBeenCalledWith("Something went wrong");
+    });
+  });
 });
