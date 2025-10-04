@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter as Router } from 'react-router-dom';
+import '@testing-library/jest-dom';
 import Footer from './Footer';
 
 // AI attribution: Some test cases are produced with the help of OpenAI ChatGPT(GPT-5) via cursor.
@@ -19,7 +20,7 @@ describe('Footer Component', () => {
   describe('Rendering Tests', () => {
     test('renders copyright text with correct content', () => {
       // Given: Expected copyright text
-      const expectedCopyrightText = 'All Rights Reserved © TestingComp';
+      const expectedCopyrightText = 'All rights reserved. © TestingComp';
       
       // When: Footer component is rendered
       render(

@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
+import '@testing-library/jest-dom';
 import About from './About';
 
 // AI attribution: Some test cases are produced with the help of OpenAI ChatGPT(GPT-5) via cursor.

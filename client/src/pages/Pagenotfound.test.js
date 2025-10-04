@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
+import '@testing-library/jest-dom';
 import Pagenotfound from './Pagenotfound';
 
 // AI attribution: Some test cases are produced with the help of OpenAI ChatGPT(GPT-5) via cursor.
@@ -33,15 +34,15 @@ describe('Pagenotfound Page - Comprehensive Tests', () => {
       expect(screen.getByText('404')).toHaveClass('pnf-title');
       
       // Verify error message is displayed
-      expect(screen.getByText('Oops ! Page Not Found')).toBeInTheDocument();
-      expect(screen.getByText('Oops ! Page Not Found')).toHaveClass('pnf-heading');
+      expect(screen.getByText('Oops! Page Not Found')).toBeInTheDocument();
+      expect(screen.getByText('Oops! Page Not Found')).toHaveClass('pnf-heading');
     });
 
     test('navigation link functions correctly', () => {
       render(<MockPagenotfound />);
       
       // Verify Go Back link exists and has correct attributes
-      const goBackLink = screen.getByText('Go Back');
+      const goBackLink = screen.getByText('Go Back Home');
       expect(goBackLink).toBeInTheDocument();
       expect(goBackLink).toHaveAttribute('href', '/');
       expect(goBackLink).toHaveClass('pnf-btn');
@@ -65,8 +66,8 @@ describe('Pagenotfound Page - Comprehensive Tests', () => {
       
       // Verify all text content is present
       expect(screen.getByText('404')).toBeInTheDocument();
-      expect(screen.getByText('Oops ! Page Not Found')).toBeInTheDocument();
-      expect(screen.getByText('Go Back')).toBeInTheDocument();
+      expect(screen.getByText('Oops! Page Not Found')).toBeInTheDocument();
+      expect(screen.getByText('Go Back Home')).toBeInTheDocument();
     });
 
     test('heading structure is correct', () => {
@@ -77,7 +78,7 @@ describe('Pagenotfound Page - Comprehensive Tests', () => {
       const h2 = screen.getByRole('heading', { level: 2 });
       
       expect(h1).toHaveTextContent('404');
-      expect(h2).toHaveTextContent('Oops ! Page Not Found');
+      expect(h2).toHaveTextContent('Oops! Page Not Found');
       
       // Verify heading classes
       expect(h1).toHaveClass('pnf-title');
@@ -87,7 +88,7 @@ describe('Pagenotfound Page - Comprehensive Tests', () => {
     test('link text and attributes are correct', () => {
       render(<MockPagenotfound />);
       
-      const goBackLink = screen.getByText('Go Back');
+      const goBackLink = screen.getByText('Go Back Home');
       
       // Verify link text
       expect(goBackLink).toHaveTextContent('Go Back');
