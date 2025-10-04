@@ -18,7 +18,7 @@ import {
   productFiltersController, 
   productListController, 
   productPhotoController, 
-  realtedProductController, 
+  relatedProductController, 
   searchProductController 
 } from "./productController";
 
@@ -776,7 +776,7 @@ describe("relatedProductController method", () => {
       populate: jest.fn().mockResolvedValue(mockProducts),
     });
 
-    await realtedProductController(req, res);
+    await relatedProductController(req, res);
 
     expect(productModel.find).toHaveBeenCalledWith({
       category: "clothes",
@@ -804,7 +804,7 @@ describe("relatedProductController method", () => {
       populate: jest.fn().mockResolvedValue(mockProducts),
     });
 
-    await realtedProductController(req, res);
+    await relatedProductController(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith({
@@ -825,7 +825,7 @@ describe("relatedProductController method", () => {
       populate: jest.fn().mockResolvedValue(mockProducts),
     });
 
-    await realtedProductController(req, res);
+    await relatedProductController(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith({
@@ -847,7 +847,7 @@ describe("relatedProductController method", () => {
       populate: jest.fn().mockResolvedValue(mockProducts),
     });
 
-    await realtedProductController(req, res);
+    await relatedProductController(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith({
@@ -864,7 +864,7 @@ describe("relatedProductController method", () => {
       populate: jest.fn().mockRejectedValue(error),
     });
 
-    await realtedProductController(req, res);
+    await relatedProductController(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.send).toHaveBeenCalledWith({
