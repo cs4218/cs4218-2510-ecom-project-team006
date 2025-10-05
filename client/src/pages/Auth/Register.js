@@ -17,6 +17,13 @@ const Register = () => {
   // form function
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // validate phone is numeric
+    const phoneIsNumeric = /^\d+$/.test(phone);
+    if (!phoneIsNumeric) {
+      toast.error('Phone must contain only numbers');
+      return;
+    }
+
     try {
       const res = await axios.post("/api/v1/auth/register", {
         name,
@@ -80,7 +87,7 @@ const Register = () => {
           </div>
           <div className="mb-3">
             <input
-              type="text"
+              type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="form-control"
