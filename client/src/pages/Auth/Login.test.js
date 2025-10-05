@@ -10,9 +10,21 @@ import Login from './Login';
 jest.mock('axios');
 jest.mock('react-hot-toast');
 
+// shared mock for setAuth so tests can assert it was called
+const mockSetAuth = jest.fn();
 jest.mock('../../context/auth', () => ({
-    useAuth: jest.fn(() => [null, jest.fn()]) // Mock useAuth hook to return null state and a mock function for setAuth
-  }));
+  useAuth: jest.fn(() => [null, mockSetAuth])
+}));
+
+// mock useNavigate so we can assert navigation
+const mockNavigate = jest.fn();
+jest.mock('react-router-dom', () => {
+  const original = jest.requireActual('react-router-dom');
+  return {
+    ...original,
+    useNavigate: () => mockNavigate,
+  };
+});
 
   jest.mock('../../context/cart', () => ({
     useCart: jest.fn(() => [null, jest.fn()]) // Mock useCart hook to return null state and a mock function
@@ -135,4 +147,81 @@ describe('Login Component', () => {
         await waitFor(() => expect(axios.post).toHaveBeenCalled());
         expect(toast.error).toHaveBeenCalledWith('Something went wrong');
     });
+
+  it('sends correct payload to /api/v1/auth/login', async () => {
+    axios.post.mockResolvedValueOnce({ data: { success: true, user: { id: 2 }, token: 't' } });
+
+    const { getByPlaceholderText, getByText } = render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    fireEvent.change(getByPlaceholderText('Enter Your Email'), { target: { value: 'a@b.com' } });
+    fireEvent.change(getByPlaceholderText('Enter Your Password'), { target: { value: 'pw' } });
+    fireEvent.click(getByText('LOGIN'));
+
+    await waitFor(() => expect(axios.post).toHaveBeenCalled());
+    expect(axios.post).toHaveBeenCalledWith('/api/v1/auth/login', { email: 'a@b.com', password: 'pw' });
+  });
+
+  it('calls setAuth and localStorage on successful login', async () => {
+    axios.post.mockResolvedValueOnce({ data: { success: true, user: { id: 3 }, token: 'tok' } });
+
+    const { getByPlaceholderText, getByText } = render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    fireEvent.change(getByPlaceholderText('Enter Your Email'), { target: { value: 'x@y.com' } });
+    fireEvent.change(getByPlaceholderText('Enter Your Password'), { target: { value: 'pw' } });
+    fireEvent.click(getByText('LOGIN'));
+
+    await waitFor(() => expect(axios.post).toHaveBeenCalled());
+    expect(mockSetAuth).toHaveBeenCalled();
+    expect(window.localStorage.setItem).toHaveBeenCalledWith('auth', JSON.stringify({ success: true, user: { id: 3 }, token: 'tok' }));
+  });
+
+  it('navigates to provided location.state after login if present', async () => {
+    axios.post.mockResolvedValueOnce({ data: { success: true, user: { id: 4 }, token: 'tok2' } });
+
+    const { getByPlaceholderText, getByText } = render(
+      <MemoryRouter initialEntries={[{ pathname: '/login', state: '/checkout' }] }>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    fireEvent.change(getByPlaceholderText('Enter Your Email'), { target: { value: 'p@q.com' } });
+    fireEvent.change(getByPlaceholderText('Enter Your Password'), { target: { value: 'pw' } });
+    fireEvent.click(getByText('LOGIN'));
+
+    await waitFor(() => expect(axios.post).toHaveBeenCalled());
+    expect(mockNavigate).toHaveBeenCalledWith('/checkout');
+  });
+
+  it('shows server message when login returns success:false', async () => {
+    axios.post.mockResolvedValueOnce({ data: { success: false, message: 'No account' } });
+
+    const { getByPlaceholderText, getByText } = render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    fireEvent.change(getByPlaceholderText('Enter Your Email'), { target: { value: 'no@one.com' } });
+    fireEvent.change(getByPlaceholderText('Enter Your Password'), { target: { value: 'pw' } });
+    fireEvent.click(getByText('LOGIN'));
+
+    await waitFor(() => expect(axios.post).toHaveBeenCalled());
+    expect(toast.error).toHaveBeenCalledWith('No account');
+  });
 });
