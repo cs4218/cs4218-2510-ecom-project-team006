@@ -2,6 +2,8 @@ import { createCategoryController, updateCategoryController, deleteCategoryContr
 import categoryModel from "../models/categoryModel.js";
 import slugify from "slugify";
 
+// AI Attribution: The following test code was generated with the assistance of AI (ChatGPT).
+
 jest.mock("../models/categoryModel.js");
 
 describe("createCategoryController", () => {

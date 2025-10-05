@@ -3,6 +3,8 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import CategoryForm from "./CategoryForm";
 import "@testing-library/jest-dom";
 
+// AI Attribution: The following test code was generated with the assistance of AI (ChatGPT).
+
 const handleSubmitMock = jest.fn((e) => e.preventDefault());
 const setValueMock = jest.fn();
 const mockValue1 = "Category 1";

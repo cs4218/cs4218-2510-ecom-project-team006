@@ -5,6 +5,8 @@ import axios from "axios";
 import toast from "react-hot-toast"; 
 import "@testing-library/jest-dom";
 
+// AI Attribution: The following test code was generated with the assistance of AI (ChatGPT).
+
 // Mock axios
 jest.mock("axios");
 

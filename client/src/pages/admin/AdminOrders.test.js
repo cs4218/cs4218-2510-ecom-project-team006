@@ -6,6 +6,8 @@ import moment from "moment";
 import AdminOrders from "./AdminOrders";
 import "@testing-library/jest-dom";
 
+// AI Attribution: The following test code was generated with the assistance of AI (ChatGPT).
+
 // Mock axios
 jest.mock("axios");
 
