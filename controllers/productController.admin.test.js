@@ -4,6 +4,8 @@ import categoryModel from "../models/categoryModel.js";
 import fs from "fs";
 import slugify from "slugify";
 
+// AI Attribution: The following test code was generated with the assistance of AI (ChatGPT).
+
 jest.mock("../models/productModel.js");
 jest.mock("../models/categoryModel.js");
 jest.mock("fs");

@@ -5,6 +5,8 @@ import toast from "react-hot-toast";
 import CreateCategory from "./CreateCategory";
 import "@testing-library/jest-dom";
 
+// AI Attribution: The following test code was generated with the assistance of AI (ChatGPT).
+
 // Mock axios
 jest.mock("axios");
 

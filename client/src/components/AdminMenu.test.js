@@ -4,6 +4,8 @@ import { MemoryRouter } from "react-router-dom";
 import AdminMenu from "./AdminMenu";
 import "@testing-library/jest-dom";
 
+// AI Attribution: The following test code was generated with the assistance of AI (ChatGPT).
+
 describe("AdminMenu Component", () => {
   test("renders the heading label", () => {
     render(

@@ -4,6 +4,8 @@ import AdminDashboard from "./AdminDashboard";
 import { useAuth } from "../../context/auth";
 import "@testing-library/jest-dom";
 
+// AI Attribution: The following test code was generated with the assistance of AI (ChatGPT).
+
 // Mock useAuth
 jest.mock("../../context/auth", () => ({
   useAuth: jest.fn(),

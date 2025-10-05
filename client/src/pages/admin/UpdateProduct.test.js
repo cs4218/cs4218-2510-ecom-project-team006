@@ -6,6 +6,8 @@ import toast from "react-hot-toast";
 import UpdateProduct from "./UpdateProduct";
 import "@testing-library/jest-dom";
 
+// AI Attribution: The following test code was generated with the assistance of AI (ChatGPT).
+
 // Mock navigate hook
 const mockNavigate = jest.fn();
 jest.mock("react-router-dom", () => ({
