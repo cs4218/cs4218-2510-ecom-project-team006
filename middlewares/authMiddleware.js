@@ -11,7 +11,8 @@ export const requireSignIn = async (req, res, next) => {
         req.user = decode;
         next();
     } catch (error) {
-        console.log(error);
+        console.error('requireSignIn error:', error && error.message ? error.message : error);
+        return res.status(401).json({ success: false, message: 'Invalid or expired token' });
     }
 };
 
@@ -28,11 +29,7 @@ export const isAdmin = async (req, res, next) => {
             next();
         }
     } catch (error) {
-        console.log(error);
-        res.status(401).send({
-            success: false,
-            error,
-            message: "Error in admin middleware",
-        });
+        console.error('isAdmin middleware error:', error && error.message ? error.message : error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
