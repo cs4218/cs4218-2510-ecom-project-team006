@@ -1,26 +1,28 @@
-import bcrypt from 'bcrypt';
-import { hashPassword, comparePassword } from './authHelper';
+import bcrypt from "bcrypt";
+import { hashPassword, comparePassword } from "../helpers/authHelper.js";
 
-jest.mock('bcrypt');
+jest.mock("bcrypt");
 
-describe('authHelper', () => {
-  describe('hashPassword', () => {
-    it('hashes password with saltRounds 10 and returns hashed value', async () => {
-      bcrypt.hash.mockResolvedValue('hashedValue');
+describe("authHelper", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-      const result = await hashPassword('mySecret');
+  describe("hashPassword", () => {
+    it("hashes password with saltRounds 10 and returns hashed value", async () => {
+      bcrypt.hash.mockResolvedValue("hashedValue");
 
-      expect(bcrypt.hash).toHaveBeenCalledWith('mySecret', 10);
-      expect(result).toBe('hashedValue');
+      const result = await hashPassword("mySecret");
+
+      expect(bcrypt.hash).toHaveBeenCalledWith("mySecret", 10);
+      expect(result).toBe("hashedValue");
     });
 
-    it('logs and returns undefined when bcrypt.hash throws', async () => {
-      bcrypt.hash.mockRejectedValue(new Error('oops'));
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    it("logs and throws when bcrypt.hash throws", async () => {
+      bcrypt.hash.mockRejectedValue(new Error("oops"));
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
 
-      const result = await hashPassword('bad');
-
-      expect(result).toBeUndefined();
+      await expect(hashPassword("bad")).rejects.toThrow("Failed to hash password");
       expect(consoleSpy).toHaveBeenCalled();
 
       consoleSpy.mockRestore();
@@ -31,18 +33,16 @@ describe('authHelper', () => {
     it('returns true when bcrypt.compare resolves true', async () => {
       bcrypt.compare.mockResolvedValue(true);
 
-      const ok = await comparePassword('plain', 'hashed');
+      const result = await comparePassword('plain', 'hash');
 
-      expect(bcrypt.compare).toHaveBeenCalledWith('plain', 'hashed');
-      expect(ok).toBe(true);
+      expect(bcrypt.compare).toHaveBeenCalledWith('plain', 'hash');
+      expect(result).toBe(true);
     });
 
-    it('returns false when bcrypt.compare resolves false', async () => {
-      bcrypt.compare.mockResolvedValue(false);
+    it('throws when bcrypt.compare rejects', async () => {
+      bcrypt.compare.mockRejectedValue(new Error('compare-fail'));
 
-      const ok = await comparePassword('plain', 'hashed');
-
-      expect(ok).toBe(false);
+      await expect(comparePassword('a', 'b')).rejects.toThrow('compare-fail');
     });
   });
 });
