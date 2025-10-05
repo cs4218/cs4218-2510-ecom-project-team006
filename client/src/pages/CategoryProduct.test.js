@@ -1,7 +1,7 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import '@testing-library/jest-dom/extend-expect';
-import { MemoryRouter, useNavigate } from "react-router-dom";
+import { MemoryRouter, useNavigate, useParams } from "react-router-dom";
 import axios from 'axios';
 import CategoryProduct from "./CategoryProduct";
 import toast from "react-hot-toast";
@@ -11,8 +11,8 @@ jest.mock("axios");
 jest.mock("react-hot-toast");
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useParams: () => ({ slug: "category-a" }),
-  useNavigate: jest.fn().mockReturnValue(jest.fn()),
+  useParams: jest.fn(),
+  useNavigate: jest.fn(),
 }));
 jest.mock("./../components/Layout", () => ({ children }) => (
   <div data-testid="layout">
@@ -55,6 +55,11 @@ const mockCategory = {
 
 describe("CategoryProduct Component", () => {
   beforeEach(() => {
+    useParams.mockReturnValue({ slug: "category-a"  });
+    useNavigate.mockReturnValue(jest.fn());
+  });
+
+  afterEach(() => {
     jest.clearAllMocks();
   });
 
@@ -152,6 +157,19 @@ describe("CategoryProduct Component", () => {
     await waitFor(() => {
       expect(screen.getByText(new RegExp(`Error: ${error.message}`))).toBeInTheDocument()
       expect(consoleSpy).toHaveBeenCalledWith(error);
+    });
+  });
+
+  it("does not fetch or render products if slug params is missing", async () => {
+    useParams.mockReturnValue(null)
+    render(
+      <MemoryRouter>
+        <CategoryProduct />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(axios.get).not.toHaveBeenCalled();
     });
   });
 });
