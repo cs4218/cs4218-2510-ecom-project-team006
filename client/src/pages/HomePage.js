@@ -18,6 +18,7 @@ const HomePage = () => {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [filterLoading, setFilterLoading] = useState(false); 
 
   const hasFilters = checked.length || radio.length;
   const hasNoFilters = !hasFilters;
@@ -38,21 +39,21 @@ const HomePage = () => {
     getAllCategory();
     getTotal();
   }, []);
+
   //get products
   const getAllProducts = async () => {
     try {
       setLoading(true);
       const { data } = await axios.get(`/api/v1/product/product-list/${page}`);
-      setLoading(false);
-      console.log("[getAllProducts] Products received:", data.products);
       setProducts(data.products);
     } catch (error) {
-      setLoading(false);
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  //getTOtal COunt
+  //get total count
   const getTotal = async () => {
     try {
       const { data } = await axios.get("/api/v1/product/product-count");
@@ -67,29 +68,29 @@ const HomePage = () => {
     if (hasFilters) return;
     loadMore();
   }, [page]);
+
   //load more
   const loadMore = async () => {
     try {
       setLoading(true);
       const { data } = await axios.get(`/api/v1/product/product-list/${page}`);
-      setLoading(false);
       setProducts([...products, ...data?.products]);
     } catch (error) {
       console.log(error);
+    } finally {
       setLoading(false);
     }
   };
 
-  // filter by cat
+  // filter by category
   const handleFilter = (value, id) => {
     let all = [...checked];
-    if (value) {
-      all.push(id);
-    } else {
-      all = all.filter((c) => c !== id);
-    }
+    if (value) all.push(id);
+    else all = all.filter((c) => c !== id);
     setChecked(all);
   };
+
+  // watch filters
   useEffect(() => {
     if (hasNoFilters) {
       getAllProducts();
@@ -98,25 +99,21 @@ const HomePage = () => {
     }
   }, [checked, radio, checked.length, radio.length]);
 
-  //get filterd product
+  //get filtered products
   const filterProduct = async () => {
+    setFilterLoading(true); 
     try {
       const { data } = await axios.post("/api/v1/product/product-filters", {
         checked,
         radio,
       });
-      console.log("Filter applied with radio:", radio);
-      console.log("Filter applied with checked categories:", checked);
-      console.log("Filtered products received:", data?.products);
       setProducts(data?.products);
     } catch (error) {
       console.log(error);
+    } finally {
+      setFilterLoading(false); 
     }
   };
-
-  useEffect(() => {
-    console.log("Radio state updated:", radio);
-  }, [radio]);
 
   return (
     <Layout title={"ALL Products - Best offers "}>
@@ -127,8 +124,9 @@ const HomePage = () => {
         alt="bannerimage"
         width={"100%"}
       />
-      {/* banner image */}
+
       <div className="container-fluid row mt-3 home-page">
+        {/* ------------------ Filter Section ------------------ */}
         <div className="col-md-3 filters">
           <h4 className="text-center">Filter By Category</h4>
           <div className="d-flex flex-column">
@@ -137,28 +135,25 @@ const HomePage = () => {
                 key={c._id}
                 onChange={(e) => handleFilter(e.target.checked, c._id)}
               >
-                {console.log("Checkbox ID:", c._id)}
                 {c.name}
               </Checkbox>
             ))}
           </div>
-          {/* price filter */}
+
+          {/* Price filter */}
           <h4 className="text-center mt-4">Filter By Price</h4>
           <div className="d-flex flex-column">
             <Radio.Group
-              onChange={(e) => {
-                console.log("Radio selected:", e.target.value);
-                setRadio(e.target.value);
-              }}
+              onChange={(e) => setRadio(e.target.value)}
             >
               {Prices?.map((p) => (
                 <div key={p._id}>
-                  {console.log("Price ID:", p._id)}
                   <Radio value={p.array}>{p.name}</Radio>
                 </div>
               ))}
             </Radio.Group>
           </div>
+
           <div className="d-flex flex-column">
             <button
               className="btn btn-danger"
@@ -168,12 +163,22 @@ const HomePage = () => {
             </button>
           </div>
         </div>
-        <div className="col-md-9 ">
+
+        {/* ------------------ Product List ------------------ */}
+        <div className="col-md-9">
           <h1 className="text-center">All Products</h1>
-          <div className="d-flex flex-wrap">
-            {products?.map((p) => (
+
+          {/* Loading indicator for filter state */}
+          {filterLoading && (
+            <p className="text-center text-muted" data-testid="filter-loading">
+              Loading filtered results...
+            </p>
+          )}
+
+          {/* Product Grid */}
+          <div className={`d-flex flex-wrap ${filterLoading ? "disabled-grid" : ""}`}>
+            {!filterLoading && products?.map((p) => (
               <div className="card m-2" key={p._id}>
-                {console.log("Product ID:", p._id)}
                 <img
                   src={`/api/v1/product/product-photo/${p._id}`}
                   className="card-img-top"
@@ -196,6 +201,7 @@ const HomePage = () => {
                     <button
                       className="btn btn-info ms-1"
                       onClick={() => navigate(`/product/${p.slug}`)}
+                      disabled={filterLoading} 
                     >
                       More Details
                     </button>
@@ -203,12 +209,10 @@ const HomePage = () => {
                       className="btn btn-dark ms-1"
                       onClick={() => {
                         setCart([...cart, p]);
-                        localStorage.setItem(
-                          "cart",
-                          JSON.stringify([...cart, p])
-                        );
+                        localStorage.setItem("cart", JSON.stringify([...cart, p]));
                         toast.success("Item Added to cart");
                       }}
+                      disabled={filterLoading}
                     >
                       ADD TO CART
                     </button>
@@ -217,6 +221,8 @@ const HomePage = () => {
               </div>
             ))}
           </div>
+
+          {/* Load more */}
           <div className="m-2 p-3">
             {products && products.length < total && hasNoFilters && (
               <button
@@ -225,6 +231,7 @@ const HomePage = () => {
                   e.preventDefault();
                   setPage(page + 1);
                 }}
+                disabled={loading}
               >
                 {loading ? "Loading ..." : <> Loadmore ↻</>}
               </button>
