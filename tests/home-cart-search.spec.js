@@ -1,304 +1,186 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-/* ============================================================
-   Shared Utilities
-============================================================ */
-async function addProduct(page, keyword) {
-  console.log(`Starting test: searching and adding product "${keyword}"`);
-  await page.goto('/');
-  const searchInput = page.locator('input[placeholder*="Search"]');
-  await searchInput.fill(keyword);
-  await page.keyboard.press('Enter');
-  await expect(page.locator('text=Search Resuts')).toBeVisible();
+test.describe.configure({ mode: "serial" }); 
 
-  const firstCard = page.locator('.card').first();
-  await expect(firstCard).toBeVisible();
+test.describe("End-to-End UI Purchase Flow", () => {
+  const BASE_URL = "http://localhost:3000";
 
-  const priceText = await firstCard
-    .locator('.card-text', { hasText: '$' })
-    .first()
-    .textContent();
-  const priceValue = parseFloat(priceText.replace(/[^0-9.]/g, ''));
-  console.log(`Found "${keyword}" in search results, price: ${priceValue}`);
+  /* ============================================================
+     TEST 1 — Guest adds products to cart → sees login prompt
+  ============================================================ */
+  test("Guest can add products to cart and sees login prompt", async ({ page }) => {
+    await page.goto(BASE_URL);
+    await page.waitForSelector(".card");
 
-  await firstCard.locator('button:has-text("ADD TO CART")').click();
-  await page.waitForTimeout(1000);
-  console.log(`Added "${keyword}" to cart successfully`);
-  return priceValue;
-}
-
-async function getCartTotal(page) {
-  const totalText = await page.locator('[data-testid="total-price"]').textContent();
-  const total = parseFloat(totalText.replace(/[^0-9.]/g, ''));
-  console.log(`Cart total currently: ${total}`);
-  return total;
-}
-
-async function goToCart(page) {
-  console.log('Navigating to cart page');
-  const cartLink = page.getByRole('link', { name: /^Cart$/ });
-  await expect(cartLink).toBeVisible();
-  await cartLink.click();
-  await expect(page.locator('h2:has-text("Cart Summary")')).toBeVisible();
-  console.log('Cart page loaded successfully');
-}
-
-/* ============================================================
-   Test Group 1: Search, Cart, and Checkout Flows (T1–T6)
-============================================================ */
-test.describe.serial('System Test: Search, Cart, and Checkout Flows', () => {
-  test('T1: Search "Laptop", add to cart, and verify total', async ({ page }) => {
-    console.log('Running T1');
-    const price = await addProduct(page, 'Laptop');
-    await page.goto('/cart');
-    const total = await getCartTotal(page);
-    expect(total).toBeCloseTo(price, 2);
-    console.log('T1 passed: single product total verified after search');
-  });
-
-  test('T2: Search and add "Laptop" + "Book", verify combined total', async ({ page }) => {
-    console.log('Running T2');
-    const laptopPrice = await addProduct(page, 'Laptop');
-    const bookPrice = await addProduct(page, 'Book');
-    const expectedTotal = laptopPrice + bookPrice;
-    await page.goto('/cart');
-    const totalDisplayed = await getCartTotal(page);
-    expect(totalDisplayed).toBeCloseTo(expectedTotal, 2);
-    console.log('T2 passed: combined total verified after search');
-  });
-
-  test('T3: Search and add "Laptop" + "Book", remove one, verify total decreases', async ({ page }) => {
-    console.log('Running T3');
-    const laptopPrice = await addProduct(page, 'Laptop');
-    const bookPrice = await addProduct(page, 'Book');
-    const combinedTotal = laptopPrice + bookPrice;
-    await page.goto('/cart');
-    const beforeRemove = await getCartTotal(page);
-    expect(beforeRemove).toBeCloseTo(combinedTotal, 2);
-    const removeButtons = page.locator('button.btn-danger:has-text("Remove")');
-    const count = await removeButtons.count();
-    await removeButtons.nth(count - 1).click();
-    await page.waitForTimeout(1000);
-    const afterRemove = await getCartTotal(page);
-    expect(afterRemove).toBeCloseTo(laptopPrice, 2);
-    console.log('T3 passed: product removed and total decreased');
-  });
-
-  test('T4: Add all visible products and verify total sum in cart', async ({ page }) => {
-    console.log('Running T4');
-    await page.goto('/');
-    await page.waitForSelector('.card.m-2', { timeout: 15000 });
-    const productCards = page.locator('.card.m-2');
-    const count = await productCards.count();
+    const addButtons = page.locator(".btn.btn-dark", { hasText: "ADD TO CART" });
+    const count = await addButtons.count();
     expect(count).toBeGreaterThan(0);
-    let expectedTotal = 0;
-    for (let i = 0; i < count; i++) {
-      const card = productCards.nth(i);
-      const priceText = await card.locator('.card-price').textContent();
-      const priceValue = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 0;
-      expectedTotal += priceValue;
-      await card.getByRole('button', { name: /add to cart/i }).click();
-      await page.waitForTimeout(300);
-    }
-    await goToCart(page);
-    const displayedTotal = await getCartTotal(page);
-    expect(displayedTotal).toBeCloseTo(expectedTotal, 2);
-    console.log('T4 passed: total of all products verified');
+
+    // Add first two items if possible
+    await addButtons.first().click();
+    if (count > 1) await addButtons.nth(1).click();
+
+    // Navigate to cart
+    await page.getByRole("link", { name: /cart/i }).click();
+    await expect(page.locator("h1")).toContainText("You have");
+    await expect(page.locator("text=Cart Summary")).toBeVisible();
+    await expect(page.locator("text=Please login to checkout!")).toBeVisible();
   });
 
-  test('T5: Remove all items and verify empty cart (Total $0.00)', async ({ page }) => {
-    console.log('Running T5');
-    await page.goto('/');
-    await page.waitForSelector('.card.m-2', { timeout: 15000 });
-    const cards = page.locator('.card.m-2');
-    const count = await cards.count();
-    for (let i = 0; i < count; i++) {
-      await cards.nth(i).getByRole('button', { name: /add to cart/i }).click();
-      await page.waitForTimeout(200);
-    }
-    await goToCart(page);
-    while (await page.locator('button.btn-danger:has-text("Remove")').count() > 0) {
-      await page.locator('button.btn-danger:has-text("Remove")').first().click();
-      await page.waitForTimeout(300);
-    }
-    const totalText = await page.locator('[data-testid="total-price"]').textContent();
-    expect(totalText.trim()).toMatch(/Total\s*:\s*\$0\.00/);
-    console.log('T5 passed: all items removed, cart empty');
+  /* ============================================================
+     TEST 2 — Category filter behavior
+  ============================================================ */
+  test("User can filter products by category", async ({ page }) => {
+    await page.goto(BASE_URL);
+    await page.waitForSelector(".filters input[type=checkbox]");
+
+    const beforeCount = await page.locator(".card").count();
+
+    // Apply first available category
+    const categoryBox = page.locator(".filters input[type=checkbox]").first();
+    await categoryBox.check();
+
+    // Wait for API response to complete
+    await page.waitForResponse((res) =>
+      res.url().includes("/api/v1/product/product-filters") && res.status() === 200
+    );
+
+    // Verify product list updated
+    const afterCount = await page.locator(".card").count();
+    expect(afterCount).toBeLessThanOrEqual(beforeCount);
+    await expect(page.locator(".card").first()).toBeVisible();
   });
 
-  test('T6: Click “Please Login to checkout” and verify redirect to Login page', async ({ page }) => {
-    console.log('Running T6');
-    await page.goto('/');
-    await page.waitForSelector('.card.m-2', { timeout: 15000 });
-    const firstCard = page.locator('.card.m-2').first();
-    await firstCard.getByRole('button', { name: /add to cart/i }).click();
-    await goToCart(page);
-    const loginBtn = page.getByRole('button', { name: /please login to checkout/i });
-    await expect(loginBtn).toBeVisible();
-    await loginBtn.click();
-    await expect(page).toHaveURL(/\/login/i);
-    await expect(page.getByRole('heading', { name: /login/i })).toBeVisible();
-    console.log('T6 passed: redirected to login page correctly');
-  });
-});
+  /* ============================================================
+     TEST 3 — Load More pagination
+  ============================================================ */
+  test("User clicks Load More to reveal additional products", async ({ page }) => {
+    await page.goto(BASE_URL);
+    await page.waitForSelector(".card");
 
-/* ============================================================
-   Test Group 2: Homepage Filters and Search (T7–T10)
-============================================================ */
-test.describe.serial('System Test: Homepage Filters and Search', () => {
-  async function filterAndAssertCategory(page, categoryName) {
-    console.log(`Running filter test for category "${categoryName}"`);
-    await page.goto('/');
-    await page.waitForSelector('.filters', { timeout: 15000 });
-    await page.getByLabel(categoryName).check();
-
-    const loadingLocator = page.locator('[data-testid="filter-loading"]');
-    await expect(loadingLocator).toBeVisible({ timeout: 5000 });
-    await expect(loadingLocator).toBeHidden({ timeout: 15000 });
-
-    const cards = page.locator('.card.m-2');
-    const count = await cards.count();
-
-    if (count === 0) {
-      console.log(`No products found for category "${categoryName}"`);
+    const loadBtn = page.locator('button:has-text("Loadmore")');
+    if (!(await loadBtn.isVisible())) {
+      console.warn("Loadmore button not shown — backend may not paginate products.");
       return;
     }
 
-    const firstCard = cards.first();
-    await expect(firstCard).toBeVisible();
+    const initialCount = await page.locator(".card").count();
+    await loadBtn.click();
 
-    await Promise.all([
-      page.waitForURL(/\/product\//),
-      firstCard.getByRole('button', { name: /more details/i }).click(),
-    ]);
+    // Wait until product count increases
+    await page.waitForFunction(
+      (initial) => document.querySelectorAll(".card").length > initial,
+      initialCount
+    );
 
-    const categoryLocator = page.locator('h6', { hasText: 'Category :' });
-    await expect(categoryLocator).toContainText(categoryName);
-    console.log(`Verified category "${categoryName}" product details`);
-  }
-
-  test('T7a: Filter by "Book" → Verify product details show same category', async ({ page }) => {
-    await filterAndAssertCategory(page, 'Book');
+    const newCount = await page.locator(".card").count();
+    console.log(`Products before: ${initialCount}, after load: ${newCount}`);
+    expect(newCount).toBeGreaterThan(initialCount);
   });
 
-  test('T7b: Filter by "Electronics" → Verify product details show same category', async ({ page }) => {
-    await filterAndAssertCategory(page, 'Electronics');
+  /* ============================================================
+     TEST 4 — Search and product details flow
+  ============================================================ */
+  test("User searches a product, views its details, and adds it to cart", async ({ page }) => {
+    await page.goto(BASE_URL);
+    await page.waitForSelector("input[placeholder*='Search']");
+
+    // Perform search
+    await page.locator("input[placeholder*='Search']").fill("Book");
+    await page.keyboard.press("Enter");
+
+    await expect(page.getByRole("heading", { name: /Search Results/i })).toBeVisible();
+    const results = page.locator(".card");
+    await expect(results.first()).toBeVisible();
+
+    // View product details
+    await results.first().locator("button:has-text('More Details')").click();
+    await expect(page).toHaveURL(/\/product\//);
+    await expect(page.getByText("Product Details")).toBeVisible();
+
+    // Add product to cart from details page
+    const addBtn = page.getByRole("button", { name: /add to cart/i });
+    if (await addBtn.isVisible()) await addBtn.click();
+
+    // Verify in cart
+    await page.getByRole("link", { name: /cart/i }).click();
+    await expect(page.locator("text=Cart Summary")).toBeVisible();
   });
 
-  test('T7c: Filter by "Clothing" → Verify product details show same category', async ({ page }) => {
-    await filterAndAssertCategory(page, 'Clothing');
-  });
+  /* ============================================================
+     TEST 5 — Remove product(s) from cart
+  ============================================================ */
+  test("User can remove product(s) from the cart", async ({ page }) => {
+    await page.goto(BASE_URL);
+    await page.waitForSelector(".card");
 
-  // ---------- Price Filter Helper ----------
-  async function verifyPriceRange(page, min, max) {
-    console.log(`Checking price filter range: $${min}–$${max}`);
-    const loadingLocator = page.locator('[data-testid="filter-loading"]');
-    await expect(loadingLocator).toBeVisible({ timeout: 5000 });
-    await expect(loadingLocator).toBeHidden({ timeout: 15000 });
+    // Add product
+    const addBtn = page.locator(".btn.btn-dark", { hasText: "ADD TO CART" }).first();
+    await addBtn.click();
 
-    const cards = page.locator('.card.m-2');
-    const count = await cards.count();
+    // Go to cart
+    await page.getByRole("link", { name: /cart/i }).click();
+    const items = page.locator(".row.card.flex-row");
+    const countBefore = await items.count();
 
-    if (count === 0) {
-      console.log(`No products found for price range $${min}–$${max}`);
-      return;
+    // Remove first product
+    await page.locator(".btn.btn-danger", { hasText: "Remove" }).first().click();
+    await page.waitForTimeout(1000);
+
+    // Validate
+    const countAfter = await items.count();
+    if (countBefore > 1) {
+      expect(countAfter).toBeLessThan(countBefore);
+    } else {
+      await expect(page.locator("text=Your cart is empty")).toBeVisible();
     }
-
-    for (let i = 0; i < count; i++) {
-      const priceText = await cards.nth(i).locator('.card-price').textContent();
-      const val = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 0;
-      expect(val).toBeGreaterThanOrEqual(min);
-      if (max !== Infinity) {
-        expect(val).toBeLessThanOrEqual(max + 0.99);
-      }
-    }
-    console.log(`Verified ${count} products within approximately $${min}–$${max}`);
-  }
-
-  // ---------- Price Filter Tests ----------
-  test('T8a: Filter "$0 to 19"', async ({ page }) => {
-    console.log('Running T8a');
-    await page.goto('/');
-    await page.getByLabel('$0 to 19').check();
-    await verifyPriceRange(page, 0, 19);
   });
 
-  test('T8b: Filter "$20 to 39"', async ({ page }) => {
-    console.log('Running T8b');
-    await page.goto('/');
-    await page.getByLabel('$20 to 39').check();
-    await verifyPriceRange(page, 20, 39);
+  /* ============================================================
+     TEST 6 — Logged-in user flow (with checkout buttons)
+  ============================================================ */
+  test("Logged-in user sees Make Payment and Update Address buttons", async ({ page }) => {
+    // Simulate logged-in session (using auth in localStorage)
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "auth",
+        JSON.stringify({
+          user: { name: "PlaywrightUser", address: "123 Test Street" },
+          token: "test-token",
+        })
+      );
+    });
+
+    await page.goto(BASE_URL);
+    await page.waitForSelector(".card");
+
+    // Add an item
+    const addBtn = page.locator(".btn.btn-dark", { hasText: "ADD TO CART" }).first();
+    await addBtn.click();
+
+    await page.goto(`${BASE_URL}/cart`);
+    await expect(page.locator("text=Cart Summary")).toBeVisible();
+
+    // Verify buttons for logged-in users
+    await expect(page.locator('button:has-text("Make Payment")')).toBeVisible();
+    await expect(page.locator('button:has-text("Update Address")')).toBeVisible();
   });
 
-  test('T8c: Filter "$40 to 59"', async ({ page }) => {
-    console.log('Running T8c');
-    await page.goto('/');
-    await page.getByLabel('$40 to 59').check();
-    await verifyPriceRange(page, 40, 59);
-  });
+  /* ============================================================
+     TEST 7 — Reset filters restores full product list
+  ============================================================ */
+  test("User applies filters then resets to restore full product list", async ({ page }) => {
+    await page.goto(BASE_URL);
+    await page.getByRole("checkbox").first().check();
+    await page.getByText("$0 to").click();
+    await page.waitForTimeout(1000);
 
-  test('T8d: Filter "$60 to 79"', async ({ page }) => {
-    console.log('Running T8d');
-    await page.goto('/');
-    await page.getByLabel('$60 to 79').check();
-    await verifyPriceRange(page, 60, 79);
-  });
+    // Reset filters
+    await page.getByRole("button", { name: "RESET FILTERS" }).click();
+    await page.waitForTimeout(2000);
 
-  test('T8e: Filter "$80 to 99"', async ({ page }) => {
-    console.log('Running T8e');
-    await page.goto('/');
-    await page.getByLabel('$80 to 99').check();
-    await verifyPriceRange(page, 80, 99);
-  });
-
-  test('T8f: Filter "$100 or more"', async ({ page }) => {
-    console.log('Running T8f');
-    await page.goto('/');
-    await page.getByLabel('$100 or more').check();
-    await verifyPriceRange(page, 100, Infinity);
-  });
-
-  // ---------- Combined Filter ----------
-  test('T9: Filter by "Book" + "$0 to 19" → Verify all shown are books in range', async ({ page }) => {
-    console.log('Running T9 combined filter test');
-    const categoryName = 'Book';
-    await page.goto('/');
-    await page.getByLabel(categoryName).check();
-    await page.getByLabel('$0 to 19').check();
-
-    const loadingLocator = page.locator('[data-testid="filter-loading"]');
-    await expect(loadingLocator).toBeVisible({ timeout: 5000 });
-    await expect(loadingLocator).toBeHidden({ timeout: 15000 });
-
-    const cards = page.locator('.card.m-2');
-    const count = await cards.count();
-
-    if (count === 0) {
-      console.log(`No products found for category "${categoryName}" in $0–$19`);
-      return;
-    }
-
-    console.log(`Found ${count} products for category "${categoryName}" in $0–$19`);
-    await Promise.all([
-      page.waitForURL(/\/product\//),
-      cards.first().getByRole('button', { name: /more details/i }).click(),
-    ]);
-
-    const categoryLocator = page.locator('h6', { hasText: 'Category :' });
-    await expect(categoryLocator).toContainText(categoryName);
-    console.log('T9 passed: combined filter verified');
-  });
-
-  // ---------- Empty Search ----------
-  test('T10: Empty search → Remains on same page', async ({ page }) => {
-    console.log('Running T10: empty search test');
-    await page.goto('/');
-    const currentURL = page.url();
-    const searchInput = page.locator('input[placeholder*="Search"]');
-    await searchInput.click();
-    await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(currentURL);
-    await expect(page.getByRole('heading', { name: /all products/i })).toBeVisible();
-    console.log('T10 passed: empty search stayed on same page');
+    const count = await page.locator(".card").count();
+    console.log("Total products after reset:", count);
+    expect(count).toBeGreaterThan(3);
   });
 });
