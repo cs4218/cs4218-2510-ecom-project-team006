@@ -20,7 +20,7 @@
 | Wong Swee Chong, Dave | `pages/admin/AdminDashboard.integration.test.js`<br>`controllers/categoryController.integration.test.js`<br>`controllers/productController.admin.integration.test.js` | *[UI Testing Placeholder]* |
 | Liu Yifan (username: nusliuyifan; Lord Snow) | *[Integration Testing Placeholder]* | *[UI Testing Placeholder]* |
 | Branson Lam Jian Tao | *[Integration Testing Placeholder]* | *[UI Testing Placeholder]* |
-| Ling Jun Long | *[Integration Testing Placeholder]* | *[UI Testing Placeholder]* |
+| Ling Jun Long | `pages/CartPage.integration.test.js`<br>`pages/HomePage.integration.test.js`<br>`controllers/category.integration.test.js` | `tests/home-search-cart.spec.js` |
 
 
 ## 1. Project Introduction
