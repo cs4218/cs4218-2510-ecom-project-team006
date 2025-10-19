@@ -137,9 +137,6 @@ describe("Admin Dashboard FE Integration", () => {
 process.env.JWT_SECRET = "test-secret"
 jest.mock("braintree") // not testing braintree integration
 
-// Set timeout for all tests in this file
-jest.setTimeout(60000);
-
 describe("Admin Dashboard FE + BE Integration", () => {
   let mongod;
   let server;
