@@ -13,6 +13,7 @@ import slugify from "slugify";
 // AI Attribution: The following test code was generated with the assistance of AI (ChatGPT).
 
 process.env.JWT_SECRET = "test-secret";
+jest.mock("braintree") // not testing braintree integration
 
 let mongod;
 let app;
@@ -83,6 +84,34 @@ describe("Admin Product Controllers Backend Integration", () => {
       expect(res.body).toEqual({ success: false, message: "Category not found" });
     });
 
+    test("fails if product with same name exists", async () => {
+      await productModel.create({
+        name: "Duplicate",
+        description: "Desc",
+        price: 10,
+        category: category._id,
+        quantity: 5,
+        shipping: 1,
+        slug: slugify("Duplicate"),
+      });
+
+      const res = await request(app)
+        .post("/api/v1/product/create-product")
+        .set("Authorization", adminToken)
+        .field("name", "Duplicate")
+        .field("description", "Desc")
+        .field("price", "10")
+        .field("category", category._id.toString())
+        .field("quantity", "5")
+        .field("shipping", "1")
+        .attach("photo", Buffer.from("fake image"), "product.jpg");
+
+
+      expect(res.status).toBe(409);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe("Product with this name already exists");
+    });
+
     test("creates product successfully", async () => {
       const res = await request(app)
         .post("/api/v1/product/create-product")
@@ -121,6 +150,15 @@ describe("Admin Product Controllers Backend Integration", () => {
       });
     });
 
+    test("fails if required fields are missing", async () => {
+      const res = await request(app)
+        .put(`/api/v1/product/update-product/${product._id.toString()}`)
+        .set("Authorization", adminToken)
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
     test("fails if product not found", async () => {
       const fakeId = new mongoose.Types.ObjectId();
       const res = await request(app)
@@ -135,6 +173,30 @@ describe("Admin Product Controllers Backend Integration", () => {
 
       expect(res.status).toBe(404);
       expect(res.body).toEqual({ success: false, message: "Product not found" });
+    });
+
+    test("fails if product with same name exists", async () => {
+      await productModel.create({
+        name: "Duplicate",
+        description: "Desc",
+        price: 10,
+        category: category._id,
+        quantity: 5,
+        shipping: 1,
+        slug: slugify("Duplicate"),
+      });
+      const res = await request(app)
+        .put(`/api/v1/product/update-product/${product._id.toString()}`)
+        .set("Authorization", adminToken)
+        .field("name", "Duplicate")
+        .field("description", "New Desc")
+        .field("price", "20")
+        .field("category", category._id.toString())
+        .field("quantity", "10")
+        .field("shipping", "1");
+
+      expect(res.status).toBe(409);
+      expect(res.body.success).toBe(false);
     });
 
     test("updates product successfully", async () => {
