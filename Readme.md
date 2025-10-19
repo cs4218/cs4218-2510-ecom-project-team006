@@ -12,6 +12,17 @@
 | Branson Lam Jian Tao | Product + Contact + Policy | `pages/ProductDetails.js`<br>`pages/CategoryProduct.js`<br>`pages/Contact.js`<br>`pages/Policy.js` | `controllers/productController.js`<br> - `getProductController`<br> - `getSingleProductController`<br> - `productPhotoController`<br> - `productFiltersController`<br> - `productCountController`<br> - `productListController`<br> - `searchProductController`<br> - `realtedProductController`<br> - `productCategoryController`<br>`models/productModel.js` |
 | Ling Jun Long | Search + Home + Cart + Category + Payment | `components/Form/SearchInput.js`<br>`context/search.js`<br>`pages/Search.js`<br>`pages/Homepage.js`<br>`context/cart.js`<br>`pages/CartPage.js`<br>`hooks/useCategory.js`<br>`pages/Categories.js` | `controllers/categoryController.js`<br> - `categoryController`<br> - `singleCategoryController`<br>`models/categoryModel.js`<br>`controllers/productController.js`<br> - `braintreeTokenController`<br> - `brainTreePaymentController` |
 
+
+## Workload Distribution (MS2)
+| Assignee | Integration Testing | UI Testing |
+|---|-----------------|----------------|
+| Low Zheng Hui | *[Integration Testing Placeholder]* | *[UI Testing Placeholder]* |
+| Wong Swee Chong, Dave | *[Integration Testing Placeholder]* | *[UI Testing Placeholder]* |
+| Liu Yifan (username: nusliuyifan; Lord Snow) | *[Integration Testing Placeholder]* | *[UI Testing Placeholder]* |
+| Branson Lam Jian Tao | *[Integration Testing Placeholder]* | *[UI Testing Placeholder]* |
+| Ling Jun Long | *[Integration Testing Placeholder]* | *[UI Testing Placeholder]* |
+
+
 ## 1. Project Introduction
 
 Virtual Vault is a full-stack MERN (MongoDB, Express.js, React.js, Node.js) e-commerce website, offering seamless connectivity and user-friendly features. The platform provides a robust framework for online shopping. The website is designed to adapt to evolving business needs and can be efficiently extended.
