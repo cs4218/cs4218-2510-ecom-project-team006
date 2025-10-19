@@ -292,14 +292,14 @@ export const getAllOrdersController = async (req, res) => {
       return res.json({ 
         success: true, 
         message: "No orders found", 
-        data: { data: [] }
+        data: []
       });
     }
     
     res.json({
       success: true,
       message: "Orders fetched successfully",
-      data: { data: orders }
+      data: orders
     });
   } catch (error) {
     console.log(error);
