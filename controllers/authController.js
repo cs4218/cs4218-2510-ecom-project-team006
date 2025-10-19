@@ -183,13 +183,36 @@ export const updateProfileController = async (req, res) => {
     if (!user) {
       return res.status(404).json({ 
         success: false, 
-        error: "User not found" 
+        message: "User not found" 
       });
+    }
+    
+    // Validate email format if provided
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid email format"
+        });
+      }
+      
+      // Check if email is already used by another user
+      const existingUser = await userModel.findOne({ email, _id: { $ne: req.user._id } });
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already registered"
+        });
+      }
     }
     
     //password validation
     if (password && password.length < 6) {
-      return res.json({ error: "Password is required and 6 character long" });
+      return res.status(400).json({ 
+        success: false,
+        message: "Password is required and 6 character long" 
+      });
     }
     
     const hashedPassword = password ? await hashPassword(password) : undefined;
@@ -203,14 +226,14 @@ export const updateProfileController = async (req, res) => {
       },
       { new: true }
     );
-    res.status(200).send({
+    res.status(200).json({
       success: true,
       message: "Profile Updated Successfully",
-      updatedUser,
+      data: updatedUser,
     });
   } catch (error) {
     console.log(error);
-    res.status(400).send({
+    res.status(400).json({
       success: false,
       message: "Error While Update profile",
       error,
@@ -230,14 +253,18 @@ export const getOrdersController = async (req, res) => {
       return res.json({ 
         success: true, 
         message: "No orders found", 
-        orders: [] 
+        data: [] 
       });
     }
     
-    res.json(orders);
+    res.json({
+      success: true,
+      message: "Orders fetched successfully",
+      data: orders
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).send({
+    res.status(500).json({
       success: false,
       message: "Error While Getting Orders",
       error,
@@ -247,6 +274,14 @@ export const getOrdersController = async (req, res) => {
 //orders
 export const getAllOrdersController = async (req, res) => {
   try {
+    // Check if user is admin
+    if (req.user.role !== 1) {
+      return res.status(403).json({
+        success: false,
+        message: "Admin access required"
+      });
+    }
+
     const orders = await orderModel
       .find({})
       .populate("products", "-photo")
@@ -261,10 +296,14 @@ export const getAllOrdersController = async (req, res) => {
       });
     }
     
-    res.json(orders);
+    res.json({
+      success: true,
+      message: "Orders fetched successfully",
+      data: orders
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).send({
+    res.status(500).json({
       success: false,
       message: "Error While Getting Orders",
       error,
@@ -275,15 +314,31 @@ export const getAllOrdersController = async (req, res) => {
 //order status
 export const orderStatusController = async (req, res) => {
   try {
+    // Check if user is admin
+    if (req.user.role !== 1) {
+      return res.status(403).json({
+        success: false,
+        message: "Admin access required"
+      });
+    }
+
     const { orderId } = req.params;
     const { status } = req.body;
+    
+    // Validate orderId format
+    if (!orderId || !orderId.toString().match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid order ID format"
+      });
+    }
     
     // Validate status value
     const validStatuses = ["Not Process", "Processing", "Shipped", "Delivered", "Cancelled"];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ 
         success: false, 
-        error: "Invalid status value. Valid statuses: " + validStatuses.join(", ") 
+        message: "Invalid status value. Valid statuses: " + validStatuses.join(", ") 
       });
     }
     
@@ -292,7 +347,7 @@ export const orderStatusController = async (req, res) => {
     if (!existingOrder) {
       return res.status(404).json({ 
         success: false, 
-        error: "Order not found" 
+        message: "Order not found" 
       });
     }
     
@@ -309,7 +364,7 @@ export const orderStatusController = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).send({
+    res.status(500).json({
       success: false,
       message: "Error While Updating Order",
       error,
@@ -319,15 +374,23 @@ export const orderStatusController = async (req, res) => {
 
 export const allUsersController = async (req, res) => {
   try {
+    // Check if user is admin
+    if (req.user.role !== 1) {
+      return res.status(403).json({
+        success: false,
+        message: "Admin access required"
+      });
+    }
+
     const users = await userModel.find({}).select("-password").sort({ createdAt: -1 });
     res.json({
       success: true,
       message: "All users fetched successfully",
-      users
+      data: users
     });
   } catch (error) {
     console.log(error);
-    res.status(500).send({
+    res.status(500).json({
       success: false,
       message: "Error While getting users",
       error,
