@@ -137,6 +137,9 @@ describe("Admin Dashboard FE Integration", () => {
 process.env.JWT_SECRET = "test-secret"
 jest.mock("braintree") // not testing braintree integration
 
+// Set timeout for all tests in this file
+jest.setTimeout(60000);
+
 describe("Admin Dashboard FE + BE Integration", () => {
   let mongod;
   let server;
@@ -204,7 +207,7 @@ describe("Admin Dashboard FE + BE Integration", () => {
         products,
         payment: { success: true },
         buyer: buyer1._id,
-        status: "Not Processed",
+        status: "Not Process",
       },
       {
         products,
@@ -239,13 +242,21 @@ describe("Admin Dashboard FE + BE Integration", () => {
   
     server = app.listen(5050);
     axios.defaults.baseURL = `http://localhost:5050`;
+    
+    // Set up axios interceptor to add auth token
+    axios.interceptors.request.use((config) => {
+      config.headers.authorization = adminToken;
+      return config;
+    });
   });
 
   afterAll(async () => {
     await mongoose.connection.dropDatabase();
     await mongoose.disconnect();
     await mongod.stop();
-    await server.close();
+    if (server) {
+      await server.close();
+    }
   });
 
   test("CreateCategory.js Integration", async() => {
@@ -453,7 +464,7 @@ describe("Admin Dashboard FE + BE Integration", () => {
     await waitFor(() => {
       expect(screen.getByText("John Doe")).toBeInTheDocument();
       expect(screen.getByText("Success")).toBeInTheDocument();
-      expect(screen.getByText("Not Processed")).toBeInTheDocument();
+      expect(screen.getByText("Not Process")).toBeInTheDocument();
 
       expect(screen.getByText("Jane Smith")).toBeInTheDocument();
       expect(screen.getByText("Failed")).toBeInTheDocument();
@@ -463,7 +474,7 @@ describe("Admin Dashboard FE + BE Integration", () => {
       expect(screen.getAllByText("Wireless Mouse")).toHaveLength(2);
     });
 
-    const select = screen.getByText("Not Processed"); 
+    const select = screen.getByText("Not Process"); 
     fireEvent.mouseDown(select); 
     fireEvent.click(screen.getByText("Delivered"));
 

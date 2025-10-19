@@ -11,7 +11,7 @@ const Users = () => {
       const { data } = await axios.get("/api/v1/auth/all-users")
 
       if (data?.success) {
-        setUsers(data?.users);
+        setUsers(data?.data);
       }
     } catch (error) {
       console.log(error);
