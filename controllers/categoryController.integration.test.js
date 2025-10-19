@@ -98,6 +98,31 @@ describe("Category Controllers Backend Integration", () => {
   });
 
   describe("updateCategoryControllers", () => {
+    test("fails if name is missing", async () => {
+      const cat = await categoryModel.create({ name: "Old", slug: slugify("Old") });
+
+      const res = await request(app)
+        .put(`/api/v1/category/update-category/${cat._id.toString()}`)
+        .set("Authorization", adminToken)
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({ success: false, message: "Name is required" });
+    });
+
+    test("fails if duplicate category name exists", async () => {
+      await categoryModel.create({ name: "Duplicate", slug: slugify("Duplicate") });
+      const cat = await categoryModel.create({ name: "Old", slug: slugify("Old") });
+
+      const res = await request(app)
+        .put(`/api/v1/category/update-category/${cat._id.toString()}`)
+        .set("Authorization", adminToken)
+        .send({ name: "Duplicate" });
+
+      expect(res.status).toBe(409);
+      expect(res.body).toEqual({ success: false, message: "Category with this name already exists" });
+    });
+
     test("fails if category not found", async () => {
       const fakeId = new mongoose.Types.ObjectId();
       const res = await request(app)
