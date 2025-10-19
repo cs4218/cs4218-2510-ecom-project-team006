@@ -13,6 +13,8 @@ import Products from "./Products";
 import Users from "./Users";
 import AdminOrders from "./AdminOrders";
 
+// AI Attribution: The following test code was generated with the assistance of AI (ChatGPT).
+
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: jest.fn().mockImplementation(query => ({
