@@ -52,13 +52,13 @@ describe('Order Model (models/orderModel.js) - Essential Tests', () => {
     test('status field has correct default value', () => {
       // Assert
       const statusField = orderModel.schema.paths.status;
-      expect(statusField.defaultValue).toBe('Not Process');
+      expect(statusField.defaultValue).toBe('Not Processed');
     });
 
     test('status field has correct enum values', () => {
       // Assert
       const statusField = orderModel.schema.paths.status;
-      const expectedEnum = ["Not Process", "Processing", "Shipped", "Delivered", "Cancelled"];
+      const expectedEnum = ["Not Processed", "Processing", "Shipped", "Delivered", "Cancelled"];
       expect(statusField.enumValues).toEqual(expectedEnum);
     });
 

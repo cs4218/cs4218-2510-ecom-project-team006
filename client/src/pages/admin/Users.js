@@ -3,7 +3,9 @@ import Layout from '../../components/Layout';
 import AdminMenu from '../../components/AdminMenu';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../../context/auth';
 const Users = () => {
+  const [auth] = useAuth();
   const [users, setUsers] = React.useState([]);
   
   const getAllUsers = async () => {
@@ -21,7 +23,7 @@ const Users = () => {
 
   useEffect(() => {
     getAllUsers();
-  }, []);
+  }, [auth]);
 
   return (
     <Layout title={"Dashboard - All Users"}>
