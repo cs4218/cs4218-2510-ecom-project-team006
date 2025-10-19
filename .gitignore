@@ -9,4 +9,4 @@ playwright-report/
 /coverage/
 
 sonar-project.properties
-/.scannerwork/
+/.scannerwork/.cache/
