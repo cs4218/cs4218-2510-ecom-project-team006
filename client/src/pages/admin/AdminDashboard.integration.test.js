@@ -10,6 +10,7 @@ import "@testing-library/jest-dom";
 import AdminDashboard from "./AdminDashboard";
 import CreateCategory from "./CreateCategory";
 import CreateProduct from "./CreateProduct";
+import UpdateProduct from "./UpdateProduct.js";
 import Products from "./Products";
 import Users from "./Users";
 import AdminOrders from "./AdminOrders";
@@ -54,6 +55,7 @@ const AdminDashboardSubmodule = ({initialEntry = "/dashboard/admin"}) => (
             <Route path="/dashboard/admin" element={<AdminDashboard />} />
             <Route path="/dashboard/admin/create-category" element={<CreateCategory />} />
             <Route path="/dashboard/admin/create-product" element={<CreateProduct />} />
+            <Route path="/dashboard/admin/product/:slug" element={<UpdateProduct />} />
             <Route path="/dashboard/admin/products" element={<Products />} />
             <Route path="/dashboard/admin/orders" element={<AdminOrders />} />
             <Route path="/dashboard/admin/users" element={<Users />} />
@@ -175,7 +177,7 @@ describe("Admin Dashboard FE + BE Integration", () => {
     await productModel.insertMany([
       {
         name: "Gaming Laptop",
-        description: "A high-end gaming laptops",
+        description: "A high-end gaming laptop",
         price: 1999,
         quantity: 5,
         category: category._id,
@@ -289,13 +291,161 @@ describe("Admin Dashboard FE + BE Integration", () => {
     });
   });
 
-  test("Products.js Integration", async() => {
+  test("CreateProduct.js + Product.js + UpdateProduct.js Integration", async() => {
+    global.URL.createObjectURL = jest.fn(() => "mocked-url");
 
+    render(<AdminDashboardSubmodule initialEntry="/dashboard/admin/create-product" />);
+
+    const select = screen.getByText("Select a category");
+    fireEvent.mouseDown(select);
+    await waitFor(() => {
+      expect(screen.getAllByText("Books")).toHaveLength(2);
+      expect(screen.getAllByText("Electronics")).toHaveLength(2);
+      expect(screen.getAllByText("Clothing")).toHaveLength(2);
+
+      const electronics = screen.getAllByText("Electronics");
+      fireEvent.click(electronics[1]); 
+    });
+    
+    fireEvent.change(screen.getByPlaceholderText(/Write a name/i), {
+      target: { value: "New Laptop" },
+    });
+
+    fireEvent.change(screen.getByPlaceholderText(/Write a description/i), {
+      target: { value: "A new laptop" },
+    });
+
+    fireEvent.change(screen.getByPlaceholderText(/Write a price/i), {
+      target: { value: "999" },
+    });
+
+    fireEvent.change(screen.getByPlaceholderText(/Write a quantity/i), {
+      target: { value: "100" },
+    });
+
+    fireEvent.mouseDown(screen.getByText("No"));
+    await waitFor(() => fireEvent.click(screen.getByText("Yes")));
+
+    const file = new File(["dummy content"], "laptop.png", { type: "image/png" });
+    const input = screen.getByLabelText(/Upload Photo/i);
+    fireEvent.change(input, { target: { files: [file] } });
+
+    fireEvent.click(screen.getByText("CREATE PRODUCT"));
+
+    await waitFor(() => {
+      expect(screen.getByText("All Products List")).toBeInTheDocument();
+      
+      expect(screen.getByText("Gaming Laptop")).toBeInTheDocument();
+      expect(screen.getByText("A high-end gaming laptop")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: new RegExp("Gaming Laptop") })).toBeInTheDocument();
+      expect(screen.getByAltText("Gaming Laptop")).toBeInTheDocument();
+
+      expect(screen.getByText("Wireless Mouse")).toBeInTheDocument();
+      expect(screen.getByText("Ergonomic wireless mouse")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: new RegExp("Wireless Mouse") })).toBeInTheDocument();
+      expect(screen.getByAltText("Wireless Mouse")).toBeInTheDocument();
+
+      expect(screen.getByText("New Laptop")).toBeInTheDocument();
+      expect(screen.getByText("A new laptop")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: new RegExp("New Laptop") })).toBeInTheDocument();
+      expect(screen.getByAltText("New Laptop")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText("New Laptop"));
+
+    await waitFor(() => {
+      expect(screen.getByText("UPDATE PRODUCT")).toBeInTheDocument();
+
+      expect(screen.getAllByText("Electronics")).toHaveLength(2);
+      expect(screen.getByAltText("original_product_photo")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("New Laptop")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("A new laptop")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("999")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("100")).toBeInTheDocument();
+      expect(screen.getByText("Yes")).toBeInTheDocument();
+    })
+
+    fireEvent.change(screen.getByPlaceholderText("Write a name"), {
+      target: { value: "Updated Laptop" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Write a description"), {
+      target: { value: "An updated laptop" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Write a price"), {
+      target: { value: "12345" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Write a quantity"), {
+      target: { value: "54321" },
+    });
+
+    const electronics = screen.getAllByText("Electronics");
+    fireEvent.mouseDown(electronics[1]);
+    await waitFor(() => {
+      const books = screen.getAllByText("Books");
+      fireEvent.click(books[1]);
+    });
+
+    const shippingSelect = screen.getByText("Yes");
+    fireEvent.mouseDown(shippingSelect);
+    await waitFor(() => {
+      fireEvent.click(screen.getByText("No"));
+    });
+
+    fireEvent.click(screen.getByText("UPDATE PRODUCT"));
+
+    await waitFor(() => {
+      expect(screen.getByText("All Products List")).toBeInTheDocument();
+      
+      expect(screen.getByText("Gaming Laptop")).toBeInTheDocument();
+      expect(screen.getByText("A high-end gaming laptop")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: new RegExp("Gaming Laptop") })).toBeInTheDocument();
+      expect(screen.getByAltText("Gaming Laptop")).toBeInTheDocument();
+
+      expect(screen.getByText("Wireless Mouse")).toBeInTheDocument();
+      expect(screen.getByText("Ergonomic wireless mouse")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: new RegExp("Wireless Mouse") })).toBeInTheDocument();
+      expect(screen.getByAltText("Wireless Mouse")).toBeInTheDocument();
+
+      expect(screen.getByText("Updated Laptop")).toBeInTheDocument();
+      expect(screen.getByText("An updated laptop")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: new RegExp("Updated Laptop") })).toBeInTheDocument();
+      expect(screen.getByAltText("Updated Laptop")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText("Updated Laptop"));
+
+    await waitFor(() => {
+      expect(screen.getByText("UPDATE PRODUCT")).toBeInTheDocument();
+
+      expect(screen.getAllByText("Books")).toHaveLength(2);
+      expect(screen.getByAltText("original_product_photo")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Updated Laptop")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("An updated laptop")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("12345")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("54321")).toBeInTheDocument();
+      expect(screen.getByText("No")).toBeInTheDocument();
+    })
+    
+    jest.spyOn(window, "confirm").mockReturnValue(true);
+    fireEvent.click(screen.getByText("DELETE PRODUCT"));
+
+    await waitFor(() => {
+      expect(screen.getByText("All Products List")).toBeInTheDocument();
+      
+      expect(screen.getByText("Gaming Laptop")).toBeInTheDocument();
+      expect(screen.getByText("A high-end gaming laptop")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: new RegExp("Gaming Laptop") })).toBeInTheDocument();
+      expect(screen.getByAltText("Gaming Laptop")).toBeInTheDocument();
+
+      expect(screen.getByText("Wireless Mouse")).toBeInTheDocument();
+      expect(screen.getByText("Ergonomic wireless mouse")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: new RegExp("Wireless Mouse") })).toBeInTheDocument();
+      expect(screen.getByAltText("Wireless Mouse")).toBeInTheDocument();
+
+      expect(screen.queryByText("Updated Laptop")).not.toBeInTheDocument();
+      expect(screen.queryByText("An updated laptop")).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: new RegExp("Updated Laptop") })).not.toBeInTheDocument();
+      expect(screen.queryByAltText("Updated Laptop")).not.toBeInTheDocument();
+    });
   });
-
-  // test("Products.js + UpdateProduct.js Integration", async() => {
-
-  // });
 
   test("AdminOrders.js Integration", async() => {
     render(<AdminDashboardSubmodule initialEntry="/dashboard/admin/orders" />);
