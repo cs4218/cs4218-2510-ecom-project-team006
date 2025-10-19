@@ -44,4 +44,5 @@ export default {
       functions: 0,
     },
   },
+  setupFilesAfterEnv: ["<rootDir>/jest.frontend.setup.js"],
 };

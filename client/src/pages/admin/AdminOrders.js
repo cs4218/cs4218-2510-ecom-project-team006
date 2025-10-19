@@ -5,9 +5,11 @@ import AdminMenu from "../../components/AdminMenu";
 import Layout from "../../components/Layout";
 import moment from "moment";
 import { Select } from "antd";
+import { useAuth } from "../../context/auth";
 const { Option } = Select;
 
 const AdminOrders = () => {
+  const [auth] = useAuth();
   const [orders, setOrders] = useState([]);
 
   const getOrders = async () => {
@@ -22,7 +24,7 @@ const AdminOrders = () => {
 
   useEffect(() => {
     getOrders();
-  }, []);
+  }, [auth]);
 
   const handleChange = async (orderId, value) => {
     try {
@@ -69,7 +71,7 @@ const AdminOrders = () => {
                           <Option value="Processing">Processing</Option>
                           <Option value="Shipped">Shipped</Option>
                           <Option value="Delivered">Delivered</Option>
-                          <Option value="Cancel">Cancel</Option>
+                          <Option value="Cancelled">Cancelled</Option>
                         </Select>
                       </td>
                       <td>{o?.buyer?.name}</td>

@@ -13,6 +13,11 @@ jest.mock("axios");
 // Mock toast
 jest.mock("react-hot-toast");
 
+// Mock useAuth
+jest.mock("../../context/auth", () => ({
+  useAuth: () => [null],
+}));
+
 // Mock Layout
 jest.mock("../../components/Layout", () => ({ children }) => (
   <div>{children}</div>

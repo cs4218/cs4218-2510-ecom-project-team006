@@ -14,6 +14,11 @@ jest.mock("axios");
 // Mock toast
 jest.mock("react-hot-toast");
 
+// Mock useAuth
+jest.mock("../../context/auth", () => ({
+  useAuth: () => [null],
+}));
+
 // Mock Layout
 jest.mock("../../components/Layout", () => ({ children }) => (
   <div>{children}</div>
@@ -152,7 +157,7 @@ describe("AdminOrders Component", () => {
     fireEvent.mouseDown(select); 
     expect(screen.getAllByText("Not Processed").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Delivered").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Cancel").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Cancelled").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByText("Delivered"));
 
     await waitFor(() => {
@@ -176,12 +181,12 @@ describe("AdminOrders Component", () => {
 
     const select = screen.getByText(mockOrders[0].status);
     fireEvent.mouseDown(select);
-    fireEvent.click(screen.getByText("Cancel"));
+    fireEvent.click(screen.getByText("Cancelled"));
 
     await waitFor(() => {
       expect(axios.put).toHaveBeenCalledWith(
         updateOrderStatusUrl(mockOrders[0]._id),
-        { status: "Cancel" }
+        { status: "Cancelled" }
       );
       expect(toast.error).toHaveBeenCalledWith("Something went wrong");
     });
