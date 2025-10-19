@@ -11,22 +11,22 @@ export const registerController = async (req, res) => {
     const { name, email, password, phone, address, answer } = req.body;
     //validations
     if (!name) {
-      return res.status(400).send({ message: "Name is Required" });
+      return res.status(400).json({ success: false, message: "Name is Required" });
     }
     if (!email) {
-      return res.status(400).send({ message: "Email is Required" });
+      return res.status(400).json({ success: false, message: "Email is Required" });
     }
     if (!password) {
-      return res.status(400).send({ message: "Password is Required" });
+      return res.status(400).json({ success: false, message: "Password is Required" });
     }
     if (!phone) {
-      return res.status(400).send({ message: "Phone no is Required" });
+      return res.status(400).json({ success: false, message: "Phone no is Required" });
     }
     if (!address) {
-      return res.status(400).send({ message: "Address is Required" });
+      return res.status(400).json({ success: false, message: "Address is Required" });
     }
     if (!answer) {
-      return res.status(400).send({ message: "Answer is Required" });
+      return res.status(400).json({ success: false, message: "Answer is Required" });
     }
     //check user
     const exisitingUser = await userModel.findOne({ email });
@@ -49,10 +49,17 @@ export const registerController = async (req, res) => {
       answer,
     }).save();
 
-    res.status(201).send({
+    res.status(201).json({
       success: true,
       message: "User Register Successfully",
-      user,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        address: user.address,
+        role: user.role,
+      },
     });
   } catch (error) {
     console.log(error);
@@ -70,7 +77,7 @@ export const loginController = async (req, res) => {
     const { email, password } = req.body;
     //validation
     if (!email || !password) {
-      return res.status(400).send({
+      return res.status(400).json({
         success: false,
         message: "Missing email or password",
       });
@@ -78,14 +85,14 @@ export const loginController = async (req, res) => {
     //check user
     const user = await userModel.findOne({ email });
     if (!user) {
-      return res.status(404).send({
+      return res.status(404).json({
         success: false,
-        message: "Email is not registerd",
+        message: "Email is not registered",
       });
     }
     const match = await comparePassword(password, user.password);
     if (!match) {
-      return res.status(401).send({
+      return res.status(401).json({
         success: false,
         message: "Invalid Password",
       });
@@ -94,7 +101,7 @@ export const loginController = async (req, res) => {
     const token = await JWT.sign({ _id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
-    res.status(200).send({
+    res.status(200).json({
       success: true,
       message: "login successfully",
       user: {

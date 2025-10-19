@@ -79,10 +79,17 @@ describe('Auth Controller - Essential Tests', () => {
       expect(createdInstance.password).toBe('hashedPassword123');
       expect(createdInstance.save).toHaveBeenCalled();
       expect(mockRes.status).toHaveBeenCalledWith(201);
-      expect(mockRes.send).toHaveBeenCalledWith({
+      expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         message: "User Register Successfully",
-        user: savedUser
+        user: {
+          _id: savedUser._id,
+          name: savedUser.name,
+          email: savedUser.email,
+          phone: savedUser.phone,
+          address: savedUser.address,
+          role: savedUser.role
+        }
       });
     });
 
@@ -120,7 +127,7 @@ describe('Auth Controller - Essential Tests', () => {
       };
       await registerController(mockReq, mockRes);
       expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.send).toHaveBeenCalledWith({ message: 'Name is Required' });
+      expect(mockRes.json).toHaveBeenCalledWith({ success: false, message: 'Name is Required' });
     });
 
     test('returns message when email is missing', async () => {
@@ -134,7 +141,7 @@ describe('Auth Controller - Essential Tests', () => {
       };
       await registerController(mockReq, mockRes);
       expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.send).toHaveBeenCalledWith({ message: 'Email is Required' });
+      expect(mockRes.json).toHaveBeenCalledWith({ success: false, message: 'Email is Required' });
     });
 
     test('returns message when password is missing', async () => {
@@ -148,7 +155,7 @@ describe('Auth Controller - Essential Tests', () => {
       };
       await registerController(mockReq, mockRes);
       expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.send).toHaveBeenCalledWith({ message: 'Password is Required' });
+      expect(mockRes.json).toHaveBeenCalledWith({ success: false, message: 'Password is Required' });
     });
 
     test('returns message when phone is missing', async () => {
@@ -162,7 +169,7 @@ describe('Auth Controller - Essential Tests', () => {
       };
       await registerController(mockReq, mockRes);
       expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.send).toHaveBeenCalledWith({ message: 'Phone no is Required' });
+      expect(mockRes.json).toHaveBeenCalledWith({ success: false, message: 'Phone no is Required' });
     });
 
     test('returns message when address is missing', async () => {
@@ -176,7 +183,7 @@ describe('Auth Controller - Essential Tests', () => {
       };
       await registerController(mockReq, mockRes);
       expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.send).toHaveBeenCalledWith({ message: 'Address is Required' });
+      expect(mockRes.json).toHaveBeenCalledWith({ success: false, message: 'Address is Required' });
     });
 
     test('returns message when answer is missing', async () => {
@@ -190,7 +197,7 @@ describe('Auth Controller - Essential Tests', () => {
       };
       await registerController(mockReq, mockRes);
       expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.send).toHaveBeenCalledWith({ message: 'Answer is Required' });
+      expect(mockRes.json).toHaveBeenCalledWith({ success: false, message: 'Answer is Required' });
     });
 
     test('returns 500 and error message when save fails', async () => {
@@ -255,7 +262,7 @@ describe('Auth Controller - Essential Tests', () => {
       expect(userModel.findOne).toHaveBeenCalledWith({ email: 'john@example.com' });
       expect(comparePassword).toHaveBeenCalledWith('password123', 'hashedPassword123');
       expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.send).toHaveBeenCalledWith(expect.objectContaining({
+      expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
         success: true,
         message: expect.stringContaining('login'),
         token: expect.any(String),
@@ -267,7 +274,7 @@ describe('Auth Controller - Essential Tests', () => {
       mockReq.body = { email: undefined, password: undefined };
       await loginController(mockReq, mockRes);
       expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.send).toHaveBeenCalledWith({ success: false, message: 'Missing email or password' });
+      expect(mockRes.json).toHaveBeenCalledWith({ success: false, message: 'Missing email or password' });
     });
 
     test('returns 404 when user not found', async () => {
@@ -275,7 +282,7 @@ describe('Auth Controller - Essential Tests', () => {
       userModel.findOne.mockResolvedValue(null);
       await loginController(mockReq, mockRes);
       expect(mockRes.status).toHaveBeenCalledWith(404);
-      expect(mockRes.send).toHaveBeenCalledWith({ success: false, message: 'Email is not registerd' });
+      expect(mockRes.json).toHaveBeenCalledWith({ success: false, message: 'Email is not registered' });
     });
 
     test('returns 401 on invalid password', async () => {
@@ -286,7 +293,7 @@ describe('Auth Controller - Essential Tests', () => {
       await loginController(mockReq, mockRes);
       expect(comparePassword).toHaveBeenCalledWith('wrong', 'hashedPassword123');
       expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.send).toHaveBeenCalledWith({ success: false, message: 'Invalid Password' });
+      expect(mockRes.json).toHaveBeenCalledWith({ success: false, message: 'Invalid Password' });
     });
 
     test('handles DB errors during lookup', async () => {
