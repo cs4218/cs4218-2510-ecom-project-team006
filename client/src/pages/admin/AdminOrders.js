@@ -13,7 +13,7 @@ const AdminOrders = () => {
   const getOrders = async () => {
     try {
       const { data } = await axios.get("/api/v1/auth/all-orders");
-      setOrders(data);
+      setOrders(data.data || []);
     } catch (error) {
       console.log(error);
       toast.error("Something went wrong");

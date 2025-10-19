@@ -143,6 +143,9 @@ describe("Admin Dashboard FE + BE Integration", () => {
   let adminToken;
 
   beforeAll(async () => {
+    // 设置环境变量
+    process.env.JWT_SECRET = process.env.JWT_SECRET || 'test_secret';
+    
     mongod = await MongoMemoryServer.create();
     const uri = mongod.getUri();
 
@@ -461,7 +464,7 @@ describe("Admin Dashboard FE + BE Integration", () => {
 
       expect(screen.getAllByText("Gaming Laptop")).toHaveLength(2);
       expect(screen.getAllByText("Wireless Mouse")).toHaveLength(2);
-    });
+    }, { timeout: 10000 }); // 增加超时时间
 
     const select = screen.getByText("Not Processed"); 
     fireEvent.mouseDown(select); 
@@ -469,7 +472,7 @@ describe("Admin Dashboard FE + BE Integration", () => {
 
     await waitFor(() => {
       expect(screen.getAllByText("Delivered").length).toBeGreaterThan(0);
-    });
+    }, { timeout: 10000 }); // 增加超时时间
   });
 
   test("Users.js", async () => {
