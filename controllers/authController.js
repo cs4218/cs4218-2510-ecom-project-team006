@@ -49,10 +49,12 @@ export const registerController = async (req, res) => {
       answer,
     }).save();
 
+    const userObj = user.toObject();
+    delete userObj.password;
     res.status(201).send({
       success: true,
       message: "User Register Successfully",
-      user,
+      user: userObj,
     });
   } catch (error) {
     console.log(error);
@@ -80,7 +82,7 @@ export const loginController = async (req, res) => {
     if (!user) {
       return res.status(404).send({
         success: false,
-        message: "Email is not registerd",
+        message: "Email is not registered",
       });
     }
     const match = await comparePassword(password, user.password);
