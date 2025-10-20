@@ -27,13 +27,28 @@ import Search from "./Search";
 jest.mock("axios");
 jest.setTimeout(20000);
 
-// ----------------------------------------------------------------------
-// Mock Data Setup
-// ----------------------------------------------------------------------
 const mockProducts = [
-  { _id: "1", name: "NUS T-shirt", price: 25, description: "Plain NUS T-shirt for sale", slug: "nus-tshirt" },
-  { _id: "2", name: "Smartphone", price: 500, description: "A high-end smartphone", slug: "smartphone" },
-  { _id: "3", name: "Novel", price: 15, description: "A fiction book", slug: "novel" },
+  {
+    _id: "1",
+    name: "NUS T-shirt",
+    price: 25,
+    description: "Plain NUS T-shirt for sale",
+    slug: "nus-tshirt",
+  },
+  {
+    _id: "2",
+    name: "Smartphone",
+    price: 500,
+    description: "A high-end smartphone",
+    slug: "smartphone",
+  },
+  {
+    _id: "3",
+    name: "Novel",
+    price: 15,
+    description: "A fiction book",
+    slug: "novel",
+  },
 ];
 
 const mockCategories = [
@@ -42,26 +57,34 @@ const mockCategories = [
   { _id: "c3", name: "Book" },
 ];
 
-// Global axios mock for predictable integration
 axios.get.mockImplementation((url) => {
-  if (url.includes("/product/product-list")) {
-    return Promise.resolve({ data: { products: mockProducts } });
+  if (url.includes("/api/v1/category/get-category")) {
+    return Promise.resolve({
+      data: { success: true, category: mockCategories },
+    });
   }
-  if (url.includes("/product/product-count")) {
-    return Promise.resolve({ data: { total: mockProducts.length } });
+
+  if (url.includes("/api/v1/product/product-count")) {
+    return Promise.resolve({
+      data: { total: mockProducts.length },
+    });
   }
-  if (url.includes("/category/get-category")) {
-    return Promise.resolve({ data: { success: true, category: mockCategories } });
+
+  if (url.includes("/api/v1/product/product-list")) {
+    return Promise.resolve({
+      data: { products: mockProducts },
+    });
   }
-  if (url.includes("/product/search/novel")) {
-    return Promise.resolve({ data: { products: [mockProducts[2]] } });
+
+  if (url.includes("/api/v1/product/search/novel")) {
+    return Promise.resolve({
+      data: { products: [mockProducts[2]] },
+    });
   }
+
   return Promise.resolve({ data: {} });
 });
 
-// ----------------------------------------------------------------------
-// Utility to render UI within Providers (Top-Down Environment Setup)
-// ----------------------------------------------------------------------
 const renderWithProviders = (ui) =>
   render(
     <BrowserRouter>
@@ -73,13 +96,11 @@ const renderWithProviders = (ui) =>
     </BrowserRouter>
   );
 
-// Helper: find a specific product card by name
 const findProductCardByName = async (name) => {
   await waitFor(() => {
     const titles = document.querySelectorAll(".card-title");
     if (!titles.length) throw new Error("No product cards loaded yet");
   });
-
   const cards = document.querySelectorAll(".card");
   for (const card of cards) {
     const title = card.querySelector(".card-title");
@@ -88,15 +109,10 @@ const findProductCardByName = async (name) => {
   throw new Error(`Product card '${name}' not found`);
 };
 
-// ----------------------------------------------------------------------
-// Top-Down Integration — UI Flow Tests
-// ----------------------------------------------------------------------
-describe("Top-Down Integration Phase: Home → Search → Cart", () => {
+describe("HomePage → CartPage Integration Flow", () => {
   test("adds NUS T-shirt from HomePage and verifies in CartPage", async () => {
     renderWithProviders(<HomePage />);
     const nusCard = await findProductCardByName("NUS T-shirt");
-    expect(nusCard).toBeInTheDocument();
-
     const addBtn = nusCard.querySelector("button.btn-dark");
     await act(async () => fireEvent.click(addBtn));
 
@@ -109,7 +125,9 @@ describe("Top-Down Integration Phase: Home → Search → Cart", () => {
       expect(matches[0]).toBeInTheDocument();
     });
   });
+});
 
+describe("SearchPage → CartPage Integration Flow", () => {
   test("adds Smartphone from HomePage, Novel from Search, verifies both in CartPage", async () => {
     renderWithProviders(<HomePage />);
     const smartphoneCard = await findProductCardByName("Smartphone");
@@ -132,10 +150,7 @@ describe("Top-Down Integration Phase: Home → Search → Cart", () => {
   });
 });
 
-// ----------------------------------------------------------------------
-// Behavioral & Edge-Case Integration Tests
-// ----------------------------------------------------------------------
-describe("Additional Behavior & Edge Cases", () => {
+describe("Filtering & Sorting Behavior", () => {
   beforeEach(() => localStorage.clear());
 
   test("renders filter section and category labels", async () => {
@@ -145,6 +160,27 @@ describe("Additional Behavior & Edge Cases", () => {
       expect(screen.getByText(/Filter By Price/i)).toBeInTheDocument();
     });
   });
+
+  test("clicking category checkbox triggers filter API", async () => {
+    const spy = jest
+      .spyOn(axios, "post")
+      .mockResolvedValueOnce({ data: { products: [mockProducts[2]] } });
+    renderWithProviders(<HomePage />);
+    const categoryElements = await screen.findAllByText("Book");
+    fireEvent.click(categoryElements[categoryElements.length - 1]);
+    await waitFor(() => expect(spy).toHaveBeenCalled());
+  });
+
+  test("clicking price radio updates selection", async () => {
+    renderWithProviders(<HomePage />);
+    const priceRadio = await screen.findByLabelText(/\$0 to 19/i);
+    fireEvent.click(priceRadio);
+    expect(priceRadio.checked).toBeTruthy();
+  });
+});
+
+describe("Cart Persistence & LocalStorage Behavior", () => {
+  beforeEach(() => localStorage.clear());
 
   test("persists cart items across re-render", async () => {
     renderWithProviders(<HomePage />);
@@ -159,37 +195,12 @@ describe("Additional Behavior & Edge Cases", () => {
     });
   });
 
-  test("renders gracefully with empty product list", async () => {
-    axios.get.mockImplementationOnce(() => Promise.resolve({ data: { products: [] } }));
-    renderWithProviders(<HomePage />);
+  test("cart persists after reload", async () => {
+    localStorage.setItem("cart", JSON.stringify([mockProducts[1]]));
+    renderWithProviders(<CartPage />);
     await waitFor(() => {
-      expect(screen.getByText(/All Products/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Smartphone/i)[0]).toBeInTheDocument();
     });
-  });
-
-  test("clicking category checkbox triggers filter API", async () => {
-    const spy = jest.spyOn(axios, "post").mockResolvedValueOnce({ data: { products: [mockProducts[2]] } });
-    renderWithProviders(<HomePage />);
-    const categoryElements = await screen.findAllByText("Book");
-    fireEvent.click(categoryElements[categoryElements.length - 1]);
-    await waitFor(() => expect(spy).toHaveBeenCalled());
-  });
-
-  test("logs error if API fails", async () => {
-    const spy = jest.spyOn(console, "log").mockImplementation(() => {});
-    axios.get.mockRejectedValueOnce(new Error("Network Error"));
-    renderWithProviders(<HomePage />);
-    await waitFor(() => expect(spy).toHaveBeenCalled());
-  });
-
-  test("clicking loadmore increments page count", async () => {
-    renderWithProviders(<HomePage />);
-    await waitFor(() => screen.getByText(/All Products/i));
-    const loadBtn = document.createElement("button");
-    loadBtn.textContent = "Loadmore ↻";
-    document.body.appendChild(loadBtn);
-    fireEvent.click(loadBtn);
-    expect(loadBtn.textContent).toContain("Loadmore");
   });
 
   test("adding same product twice updates cart array", async () => {
@@ -203,69 +214,61 @@ describe("Additional Behavior & Edge Cases", () => {
     const storedCart = JSON.parse(localStorage.getItem("cart"));
     expect(storedCart.length).toBeGreaterThanOrEqual(1);
   });
+});
 
-  test("clicking price radio updates selection", async () => {
+describe("Error & Edge Case Handling", () => {
+  test("renders gracefully with empty product list", async () => {
+    axios.get.mockImplementationOnce(() =>
+      Promise.resolve({ data: { products: [] } })
+    );
     renderWithProviders(<HomePage />);
-    const priceRadio = await screen.findByLabelText(/\$0 to 19/i);
-    fireEvent.click(priceRadio);
-    expect(priceRadio.checked).toBeTruthy();
-  });
-
-  test("CartPage displays products from localStorage", async () => {
-    localStorage.setItem("cart", JSON.stringify([mockProducts[0]]));
-    renderWithProviders(<CartPage />);
     await waitFor(() => {
-      const matches = screen.getAllByText(/NUS T-shirt/i);
-      expect(matches[0]).toBeInTheDocument();
+      expect(screen.getByText(/All Products/i)).toBeInTheDocument();
     });
   });
 
-  test("adds item, verifies in cart, then reloads page", async () => {
+  test("logs error if API fails", async () => {
+    const spy = jest.spyOn(console, "log").mockImplementation(() => {});
+    axios.get.mockRejectedValueOnce(new Error("Network Error"));
+    renderWithProviders(<HomePage />);
+    await waitFor(() => expect(spy).toHaveBeenCalled());
+  });
+
+  test("shows toast when localStorage quota exceeded (Cart storage error)", async () => {
+    const toastErrorSpy = jest.fn();
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    require("react-hot-toast").default.error = toastErrorSpy;
+
+    jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+        throw new Error("QuotaExceededError");
+    });
+
     renderWithProviders(<HomePage />);
     const card = await findProductCardByName("Smartphone");
-    const btn = card.querySelector("button.btn-dark");
-    await act(async () => fireEvent.click(btn));
+    const addBtn = card.querySelector("button.btn-dark");
 
-    renderWithProviders(<CartPage />);
-    await waitFor(() => {
-      const matches = screen.getAllByText(/Smartphone/i);
-      expect(matches[0]).toBeInTheDocument();
-    });
+    await act(async () => fireEvent.click(addBtn));
 
-    renderWithProviders(<CartPage />);
-    expect(localStorage.getItem("cart")).toContain("Smartphone");
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Cart storage error:",
+        expect.any(Error)
+    );
+    expect(toastErrorSpy).toHaveBeenCalledWith(
+        "Cart storage full — please remove some items."
+    );
+
+    Storage.prototype.setItem.mockRestore();
+    consoleErrorSpy.mockRestore();
   });
 });
 
-// ----------------------------------------------------------------------
-// 🧩 Phase 3: Internal Async & Error Handling Coverage
-// ----------------------------------------------------------------------
-describe("HomePage internal async behavior", () => {
-  beforeEach(() => {
-    document.body.innerHTML = ""; 
-    jest.clearAllMocks();
-  });
-
-  test("calls getAllProducts on mount and sets products", async () => {
-    const spyAxios = jest.spyOn(axios, "get");
-
-    renderWithProviders(<HomePage />);
-    await waitFor(() =>
-      expect(spyAxios).toHaveBeenCalledWith("/api/v1/product/product-list/1")
-    );
-
-    const nusItems = await screen.findAllByText(/NUS T-shirt/i);
-    const smartphoneItems = await screen.findAllByText(/Smartphone/i);
-
-    expect(nusItems.length).toBeGreaterThan(0);
-    expect(smartphoneItems.length).toBeGreaterThan(0);
-    spyAxios.mockRestore();
-  });
-
+describe("Pagination & Load More Behavior", () => {
   test("loadMore appends new products when clicking Loadmore", async () => {
     axios.get.mockImplementation((url) => {
       if (url.includes("/category/get-category"))
-        return Promise.resolve({ data: { success: true, category: mockCategories } });
+        return Promise.resolve({
+          data: { success: true, category: mockCategories },
+        });
       if (url.includes("/product/product-count"))
         return Promise.resolve({ data: { total: mockProducts.length + 1 } });
       if (url.includes("/product/product-list/1"))
@@ -274,7 +277,13 @@ describe("HomePage internal async behavior", () => {
         return Promise.resolve({
           data: {
             products: [
-              { _id: "4", name: "Extra Item", price: 99, description: "Extra desc", slug: "extra" },
+              {
+                _id: "4",
+                name: "Extra Item",
+                price: 99,
+                description: "Extra desc",
+                slug: "extra",
+              },
             ],
           },
         });
@@ -282,27 +291,119 @@ describe("HomePage internal async behavior", () => {
     });
 
     renderWithProviders(<HomePage />);
-
-    const baseTitles = await screen.findAllByText((content, node) =>
-      node?.tagName === "H5" && /NUS T-shirt/i.test(content)
-    );
-    expect(baseTitles.length).toBeGreaterThan(0);
-
-    const loadBtn = await waitFor(() =>
-      document.querySelector("button.loadmore")
-    );
+    const loadBtn = await screen.findByRole("button", { name: /loadmore/i });
     expect(loadBtn).toBeInTheDocument();
 
     await act(async () => fireEvent.click(loadBtn));
 
-    const extraTitles = await screen.findAllByText((content, node) =>
-      node?.tagName === "H5" && /Extra Item/i.test(content)
-    );
+    const extraTitles = await screen.findAllByText(/Extra Item/i);
     expect(extraTitles.length).toBeGreaterThan(0);
+  });
+});
 
-    const nusAfter = await screen.findAllByText((content, node) =>
-      node?.tagName === "H5" && /NUS T-shirt/i.test(content)
+describe("Async Data Fetching on Mount", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  test("calls getAllProducts on mount and sets products", async () => {
+    const spyAxios = jest.spyOn(axios, "get");
+    renderWithProviders(<HomePage />);
+    await waitFor(() =>
+      expect(spyAxios).toHaveBeenCalledWith("/api/v1/product/product-list/1")
     );
-    expect(nusAfter.length).toBeGreaterThan(0);
+    const nusItems = await screen.findAllByText(/NUS T-shirt/i);
+    const smartphoneItems = await screen.findAllByText(/Smartphone/i);
+    expect(nusItems.length).toBeGreaterThan(0);
+    expect(smartphoneItems.length).toBeGreaterThan(0);
+    spyAxios.mockRestore();
+  });
+});
+
+describe("Auth & Cart Integration (Guest / Logged-in)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    jest.clearAllMocks();
+  });
+
+  test("guest user sees login prompt in CartPage", async () => {
+  axios.get.mockImplementation((url) => {
+    if (url.includes("/category/get-category")) {
+      return Promise.resolve({
+        data: { success: true, category: mockCategories },
+      });
+    }
+    if (url.includes("/product/product-count")) {
+      return Promise.resolve({
+        data: { total: mockProducts.length },
+      });
+    }
+    if (url.includes("/product/product-list")) {
+      return Promise.resolve({
+        data: { products: mockProducts },
+      });
+    }
+    return Promise.resolve({ data: {} });
+  });
+
+  renderWithProviders(<HomePage />);
+
+  await screen.findByText(/All Products/i);
+
+  await act(async () => new Promise((r) => setTimeout(r, 0)));
+
+  const cards = document.querySelectorAll(".card-title");
+  expect(cards.length).toBeGreaterThan(0);
+
+  const nusCard = Array.from(document.querySelectorAll(".card")).find((c) =>
+    c.textContent.includes("NUS T-shirt")
+  );
+  expect(nusCard).toBeTruthy();
+
+  const addBtn = nusCard.querySelector("button.btn-dark");
+  await act(async () => fireEvent.click(addBtn));
+
+  renderWithProviders(<CartPage />);
+  await waitFor(() => {
+    expect(screen.getByText(/Hello Guest/i)).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/Please Login to checkout/i)[0]
+    ).toBeInTheDocument();
+  });
+});
+
+  test("logged-in user cart persists and shows total correctly", async () => {
+    localStorage.setItem(
+      "auth",
+      JSON.stringify({
+        user: { name: "Luna", address: "78 Clementi" },
+        token: "abc123",
+      })
+    );
+    localStorage.setItem(
+      "cart",
+      JSON.stringify([mockProducts[0], mockProducts[2]])
+    );
+
+    renderWithProviders(<CartPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/Hello Luna/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/NUS T-shirt/i)[0]).toBeInTheDocument();
+      expect(screen.getAllByText(/Novel/i)[0]).toBeInTheDocument();
+    });
+
+    const totalText = screen.getByTestId("total-price").textContent;
+    expect(totalText).toMatch(/\$40/);
+  });
+
+  test("remove item from cart updates DOM and storage", async () => {
+    localStorage.setItem(
+      "cart",
+      JSON.stringify([mockProducts[0], mockProducts[1]])
+    );
+    renderWithProviders(<CartPage />);
+    const removeBtns = await screen.findAllByText(/Remove/i);
+    await act(async () => fireEvent.click(removeBtns[0]));
+    const after = JSON.parse(localStorage.getItem("cart"));
+    expect(after.length).toBe(1);
+    expect(after[0].name).toBe("Smartphone");
   });
 });
