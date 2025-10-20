@@ -3,6 +3,7 @@ import colors from "colors";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import connectDB from "./config/db.js";
+import connectTestDB from "./tests/setup/setupDB.js"
 import authRoutes from './routes/authRoute.js'
 import categoryRoutes from './routes/categoryRoutes.js'
 import productRoutes from './routes/productRoutes.js'
@@ -12,7 +13,11 @@ import cors from "cors";
 dotenv.config();
 
 //database config
-connectDB();
+if (process.env.NODE_ENV == 'test') {
+    connectTestDB();
+} else {
+    connectDB();
+}
 
 const app = express();
 
