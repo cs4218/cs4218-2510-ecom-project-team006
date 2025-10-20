@@ -221,14 +221,6 @@ export const getOrdersController = async (req, res) => {
       .populate("products", "-photo")
       .populate("buyer", "name");
     
-    if (orders.length === 0) {
-      return res.json({ 
-        success: true, 
-        message: "No orders found", 
-        orders: [] 
-      });
-    }
-    
     res.json(orders);
   } catch (error) {
     console.log(error);
@@ -248,14 +240,6 @@ export const getAllOrdersController = async (req, res) => {
       .populate("buyer", "name")
       .sort({ createdAt: -1 });
     
-    if (orders.length === 0) {
-      return res.json({ 
-        success: true, 
-        message: "No orders found", 
-        orders: [] 
-      });
-    }
-    
     res.json(orders);
   } catch (error) {
     console.log(error);
@@ -274,7 +258,7 @@ export const orderStatusController = async (req, res) => {
     const { status } = req.body;
     
     // Validate status value
-    const validStatuses = ["Not Process", "Processing", "Shipped", "Delivered", "Cancelled"];
+    const validStatuses = ["Not Processed", "Processing", "Shipped", "Delivered", "Cancelled"];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ 
         success: false, 

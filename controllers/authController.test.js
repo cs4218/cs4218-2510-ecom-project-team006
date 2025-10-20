@@ -425,11 +425,7 @@ describe('Auth Controller - Essential Tests', () => {
       await getOrdersController(mockReq, mockRes);
 
       // Assert
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        message: "No orders found",
-        orders: []
-      });
+      expect(mockRes.json).toHaveBeenCalledWith([]);
     });
 
     test('handles database errors', async () => {
@@ -482,11 +478,7 @@ describe('Auth Controller - Essential Tests', () => {
       await getAllOrdersController(mockReq, mockRes);
 
       // Assert
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        message: "No orders found",
-        orders: []
-      });
+      expect(mockRes.json).toHaveBeenCalledWith([]);
     });
 
     test('handles database errors', async () => {
