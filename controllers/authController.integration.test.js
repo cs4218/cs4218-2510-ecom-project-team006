@@ -4,20 +4,15 @@ import userModel from '../models/userModel.js';
 import { registerController, loginController } from './authController.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import fs from 'fs';
-import path from 'path';
+import { jest } from '@jest/globals';
 
 // Controller-level integration test: register -> login without HTTP layer
 // AI attribution: Test cases are produced with the help of OpenAI ChatGPT(GPT-5) via cursor.
 
-import { jest } from '@jest/globals';
-
-// Configure Jest timeout globally
-jest.setTimeout(60000);
+jest.setTimeout(30000);
 
 describe('Auth Controllers - Controller-level Integration (register → login)', () => {
   let mongoServer;
-  const downloadDir = path.resolve('.cache/mongodb-binaries');
 
   const createMockRes = () => {
     const res = {
@@ -32,18 +27,13 @@ describe('Auth Controllers - Controller-level Integration (register → login)',
   };
 
   beforeAll(async () => {
-    // Ensure JWT secret exists for token generation in loginController
-    process.env.JWT_SECRET = process.env.JWT_SECRET || 'test_secret';
-
-    try {
-      fs.mkdirSync(downloadDir, { recursive: true });
-    } catch (e) {
-      // ignore mkdir race
-    }
-
-    mongoServer = await MongoMemoryServer.create({ binary: { version: '7.0.5', downloadDir } });
+    // 使用 MongoMemoryServer 创建测试数据库
+    mongoServer = await MongoMemoryServer.create();
     const uri = mongoServer.getUri();
     await mongoose.connect(uri);
+    
+    // 确保 JWT 密钥存在
+    process.env.JWT_SECRET = process.env.JWT_SECRET || 'test_secret';
   });
 
   afterAll(async () => {
@@ -74,7 +64,6 @@ describe('Auth Controllers - Controller-level Integration (register → login)',
 
     await registerController(reqRegister, resRegister);
 
-    await new Promise(resolve => setTimeout(resolve, 100)); // Wait for async operations
     expect(resRegister.status).toHaveBeenCalledWith(201);
     expect(resRegister.send).toHaveBeenCalled();
     const registerPayload = resRegister.send.mock.calls[0][0];
@@ -92,7 +81,6 @@ describe('Auth Controllers - Controller-level Integration (register → login)',
 
     await loginController(reqLogin, resLogin);
 
-    await new Promise(resolve => setTimeout(resolve, 100)); // Wait for async operations
     expect(resLogin.status).toHaveBeenCalledWith(200);
     expect(resLogin.send).toHaveBeenCalled();
     const loginPayload = resLogin.send.mock.calls[0][0];
@@ -116,7 +104,7 @@ describe('Auth Controllers - Controller-level Integration (register → login)',
     await registerController(reqRegister, resRegister);
 
     const regPayload = resRegister.send.mock.calls[0][0];
-    // 响应体不应包含明文密码（控制器会返回 user 对象，其中 password 为哈希）
+    // 响应体不应包含明文密码
     expect(regPayload?.user?.password).not.toBe('password123');
 
     const saved = await userModel.findOne({ email: 'sec@example.com' });
@@ -145,7 +133,7 @@ describe('Auth Controllers - Controller-level Integration (register → login)',
     expect(payload?._id).toBeDefined();
   });
 
-  test('duplicate email registration returns 200 with guidance message (per controller behavior)', async () => {
+  test('duplicate email registration returns 200 with guidance message', async () => {
     const body = { name: 'Dup', email: 'dup@example.com', password: 'password123', phone: '1', address: 'A', answer: 'blue' };
     const r1 = createMockRes();
     await registerController({ body }, r1);
@@ -153,7 +141,6 @@ describe('Auth Controllers - Controller-level Integration (register → login)',
 
     const r2 = createMockRes();
     await registerController({ body }, r2);
-    // 当前实现对已注册用户返回 200 + success:false 提示登录
     expect(r2.status).toHaveBeenCalledWith(200);
     const payload2 = r2.send.mock.calls[0][0];
     expect(payload2?.success).toBe(false);
@@ -184,7 +171,7 @@ describe('Auth Controllers - Controller-level Integration (register → login)',
     expect(resLogin.send).toHaveBeenCalledWith({ success: false, message: 'Email is not registered' });
   });
 
-  test('email case sensitivity behavior: different case fails login (per exact match)', async () => {
+  test('email case sensitivity behavior: different case fails login', async () => {
     const r = createMockRes();
     await registerController({ body: { name: 'Case', email: 'case@example.com', password: 'password123', phone: '1', address: 'A', answer: 'blue' } }, r);
 
