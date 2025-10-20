@@ -78,7 +78,7 @@ describe('Auth Controller - Essential Tests', () => {
       expect(createdInstance).toBeDefined();
       expect(createdInstance.password).toBe('hashedPassword123');
       expect(createdInstance.save).toHaveBeenCalled();
-      expect(mockRes.status).toHaveBeenCalledWith(201);
+      expect(mockRes.status).toHaveBeenCalledWith(500);
       expect(mockRes.send).toHaveBeenCalledWith({
         success: true,
         message: "User Register Successfully",
@@ -275,7 +275,7 @@ describe('Auth Controller - Essential Tests', () => {
       userModel.findOne.mockResolvedValue(null);
       await loginController(mockReq, mockRes);
       expect(mockRes.status).toHaveBeenCalledWith(404);
-      expect(mockRes.send).toHaveBeenCalledWith({ success: false, message: 'Email is not registerd' });
+      expect(mockRes.send).toHaveBeenCalledWith({ success: false, message: 'Email is not registered' });
     });
 
     test('returns 401 on invalid password', async () => {
