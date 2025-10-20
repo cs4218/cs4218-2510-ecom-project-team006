@@ -996,7 +996,7 @@ describe("get products by category", () => {
     ]);
   });
 
-  it("should return the correct products successfully with 200", async () => {
+  it("should return the correct products and category successfully with 200", async () => {
     const res = await request(app)
       .get(`/api/v1/product/product-category/${booksCategory.slug}`);
 
@@ -1011,6 +1011,7 @@ describe("get products by category", () => {
     // category is populated
     expect(res.body.products.every(p => p.category._id === booksCategory._id.toString())).toBe(true);
     expect(res.body.products.every(p => p.category.name === booksCategory.name)).toBe(true);
+    expect(res.body.category._id).toBe(booksCategory._id.toString());
   });
 
   it("should return no products with 200 if category does not have any products", async () => {
@@ -1021,6 +1022,7 @@ describe("get products by category", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeTruthy();
     expect(res.body.products.length).toBe(0);  
+    expect(res.body.category._id).toBe(category._id.toString());
   });
 
   
