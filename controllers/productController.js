@@ -104,7 +104,7 @@ export const getProductController = async (req, res) => {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Erorr in getting products",
+      message: "Error in getting products",
       error: error.message,
     });
   }
@@ -332,7 +332,7 @@ export const productFiltersController = async (req, res) => {
     res.status(500).send({
       success: false,
       message: "Error while Filtering Products",
-      error,
+      error: error.message,
     });
   }
 };
@@ -362,7 +362,11 @@ export const productListController = async (req, res) => {
     let { page } = req.params;
     if (page === undefined || page === null) {
       page = 1;
-    } else if (page <= 0) {
+    } else {
+      page = Number(page);
+    }
+    
+    if (Number.isNaN(page) || page <= 0) {
       return res.status(400).send({
         success: false,
         error: "Invalid page param",

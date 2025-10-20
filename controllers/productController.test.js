@@ -82,7 +82,7 @@ describe("getProductController method", () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.send).toHaveBeenCalledWith({
       success: false,
-      message: "Erorr in getting products",
+      message: "Error in getting products",
       error: error.message,
     });
 
@@ -438,7 +438,7 @@ describe("productFiltersController method", () => {
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       message: "Error while Filtering Products",
-      error,
+      error: error.message,
     });
   });
 });
@@ -617,6 +617,27 @@ describe("productListController method", () => {
 
   it("returns 400 if invalid page=-1", async () => {
     req.params.page = -1;
+    const mockProducts = [
+      { name: "Red T-shirt" },
+      { name: "Green T-shirt" },
+    ];
+    productModel.find.mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      sort: jest.fn().mockResolvedValue(mockProducts),
+    });
+
+    await productListController(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith({
+      success: false,
+      error: "Invalid page param",
+    });
+  });
+
+  it("returns 400 if invalid page is non-numeric string", async () => {
+    req.params.page = "non-numeric string";
     const mockProducts = [
       { name: "Red T-shirt" },
       { name: "Green T-shirt" },
