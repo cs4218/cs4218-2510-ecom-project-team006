@@ -7,7 +7,7 @@ module.exports = defineConfig({
   reporter: [['html', { outputFolder: 'playwright-report' }]],
 
   use: {
-    baseURL: 'http://localhost:3000', 
+    baseURL: 'http://127.0.0.1:3000', 
     headless: true,
     viewport: { width: 1280, height: 720 },
     ignoreHTTPSErrors: true,
@@ -15,9 +15,13 @@ module.exports = defineConfig({
   },
 
   webServer: {
-    command: 'NODE_ENV=test npm run dev', 
-    url: 'http://localhost:3000',
+    command: 'npm run dev', 
+    url: 'http://127.0.0.1:3000',
     reuseExistingServer: !process.env.CI,
+  },
+
+  env: {
+    NODE_ENV: 'test',
   },
 
   projects: [
