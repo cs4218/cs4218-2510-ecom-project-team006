@@ -131,6 +131,9 @@ describe("CategoryProduct Page integration tests", () => {
     renderCategoryPage();
 
     await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith(
+        expect.stringContaining(`/api/v1/product/product-category/${mockCategory.slug}`)
+      ); // since axios is mocked, we must verify it was called with the right url param
       expect(screen.getByText(`Category - ${mockCategory.name}`)).toBeInTheDocument();
       expect(screen.getByText(`${mockProducts.length} result found`)).toBeInTheDocument();
       expect(screen.getByText("Green Cookbook")).toBeInTheDocument();

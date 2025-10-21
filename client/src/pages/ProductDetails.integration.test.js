@@ -152,6 +152,9 @@ describe("ProductDetails Page integration tests", () => {
     renderProductDetailsPage();
 
     await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith(
+        expect.stringContaining(`/api/v1/product/get-product/${mockProduct.slug}`)
+      ); // since axios is mocked, we must verify it was called with the right url param
       expect(screen.getByText(/Purple Dictionary/i)).toBeInTheDocument();
       expect(screen.getByText(/Green Cookbook/i)).toBeInTheDocument();
       expect(screen.getByText(/Red Textbook/i)).toBeInTheDocument();

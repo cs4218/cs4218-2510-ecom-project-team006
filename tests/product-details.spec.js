@@ -26,7 +26,7 @@ test.describe("Product Details page UI tests", () => {
     await expect(productDetails.getByAltText("Textbook")).toBeVisible();
   });
 
-    test("should add main product to cart", async ({ page }) => {
+  test("should add main product to cart", async ({ page }) => {
     // click add to cart on main product
     const productDetails = page.locator('.product-details-info');
     await productDetails.getByRole("button", { name: "ADD TO CART" }).click();
