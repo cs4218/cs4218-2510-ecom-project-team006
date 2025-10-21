@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto('http://localhost:3000/category/book');
 });
 
-test.describe("ProductCategory Page UI tests", () => {
+test.describe("CategoryProduct Page UI tests", () => {
   test("should display all products in the category", async ({ page }) => {
     await expect(page.getByText(/Category - Book/i)).toBeVisible();
     await expect(page.getByText(/3 result found/i)).toBeVisible();
