@@ -109,7 +109,7 @@ const ProductDetails = () => {
           }
         <div className="d-flex flex-wrap">
           {relatedProducts?.map((p) => (
-            <div className="card m-2" key={p._id}>
+            <div className="card m-2" data-testid="similar-product" key={p._id}>
               <img
                 src={`/api/v1/product/product-photo/${p._id}`}
                 className="card-img-top"
@@ -117,7 +117,7 @@ const ProductDetails = () => {
               />
               <div className="card-body">
                 <div className="card-name-price">
-                  <h5 className="card-title">{p.name}</h5>
+                  <h5 className="card-title" data-testid="product-name" >{p.name}</h5>
                   <h5 className="card-title card-price">
                     {p.price.toLocaleString("en-US", {
                       style: "currency",
