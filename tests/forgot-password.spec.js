@@ -124,7 +124,7 @@ test.describe('Forgot Password Flow', () => {
     await page.getByPlaceholder('Enter Your Name').fill('Test User 2');
     await page.getByPlaceholder('Enter Your Email').fill(testEmail);
     await page.getByPlaceholder('Enter Your Password').fill(originalPassword);
-    await page.getByPlaceholder('Enter Your Phone Number').fill('9876543210');
+    await page.getByPlaceholder('Enter Your Phone').fill('9876543210');
     await page.getByPlaceholder('Enter Your Address').fill('456 Test Ave');
     await page.getByPlaceholder('Enter Your DOB').fill('1995-06-15');
     await page.getByPlaceholder('What is Your Favorite Color?').fill(testAnswer);

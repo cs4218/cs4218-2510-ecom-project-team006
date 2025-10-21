@@ -97,7 +97,7 @@ const Register = () => {
               onChange={(e) => setPhone(e.target.value)}
               className="form-control"
               id="exampleInputPhone1"
-              placeholder="Enter Your Phone Number"
+              placeholder="Enter Your Phone"
               required
             />
           </div>

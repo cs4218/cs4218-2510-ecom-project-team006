@@ -72,7 +72,7 @@ describe('Register Component', () => {
     fireEvent.change(getByPlaceholderText('Enter Your Phone'), { target: { value: '1234567890' } });
     fireEvent.change(getByPlaceholderText('Enter Your Address'), { target: { value: '123 Street' } });
     fireEvent.change(getByPlaceholderText('Enter Your DOB'), { target: { value: '2000-01-01' } });
-    fireEvent.change(getByPlaceholderText('What is Your Favorite sports'), { target: { value: 'Football' } });
+  fireEvent.change(getByPlaceholderText('What is Your Favorite Color?'), { target: { value: 'Football' } });
 
     fireEvent.click(getByText('REGISTER'));
 
@@ -97,7 +97,7 @@ describe('Register Component', () => {
     fireEvent.change(getByPlaceholderText('Enter Your Phone'), { target: { value: '1234567890' } });
     fireEvent.change(getByPlaceholderText('Enter Your Address'), { target: { value: '123 Street' } });
     fireEvent.change(getByPlaceholderText('Enter Your DOB'), { target: { value: '2000-01-01' } });
-    fireEvent.change(getByPlaceholderText('What is Your Favorite sports'), { target: { value: 'Football' } });
+  fireEvent.change(getByPlaceholderText('What is Your Favorite Color?'), { target: { value: 'Football' } });
 
     fireEvent.click(getByText('REGISTER'));
 
@@ -120,7 +120,7 @@ describe('Register Component', () => {
     fireEvent.change(getByPlaceholderText('Enter Your Phone'), { target: { value: '123-abc' } }); // invalid
     fireEvent.change(getByPlaceholderText('Enter Your Address'), { target: { value: '123 Street' } });
     fireEvent.change(getByPlaceholderText('Enter Your DOB'), { target: { value: '2000-01-01' } });
-    fireEvent.change(getByPlaceholderText('What is Your Favorite sports'), { target: { value: 'Football' } });
+  fireEvent.change(getByPlaceholderText('What is Your Favorite Color?'), { target: { value: 'Football' } });
 
     fireEvent.click(getByText('REGISTER'));
 
@@ -147,7 +147,7 @@ describe('Register Component', () => {
     fireEvent.change(getByPlaceholderText('Enter Your Phone'), { target: { value: '1234567890' } });
     fireEvent.change(getByPlaceholderText('Enter Your Address'), { target: { value: '123 Street' } });
     fireEvent.change(getByPlaceholderText('Enter Your DOB'), { target: { value: '2000-01-01' } });
-    fireEvent.change(getByPlaceholderText('What is Your Favorite sports'), { target: { value: 'Football' } });
+  fireEvent.change(getByPlaceholderText('What is Your Favorite Color?'), { target: { value: 'Football' } });
 
     fireEvent.click(getByText('REGISTER'));
 
@@ -172,7 +172,7 @@ describe('Register Component', () => {
     fireEvent.change(getByPlaceholderText('Enter Your Phone'), { target: { value: '9876543210' } });
     fireEvent.change(getByPlaceholderText('Enter Your Address'), { target: { value: '456 Road' } });
     fireEvent.change(getByPlaceholderText('Enter Your DOB'), { target: { value: '1995-05-05' } });
-    fireEvent.change(getByPlaceholderText('What is Your Favorite sports'), { target: { value: 'Tennis' } });
+  fireEvent.change(getByPlaceholderText('What is Your Favorite Color?'), { target: { value: 'Tennis' } });
 
     fireEvent.click(getByText('REGISTER'));
 
@@ -206,7 +206,7 @@ describe('Register Component', () => {
     fireEvent.change(getByPlaceholderText('Enter Your Phone'), { target: { value: '1234567890' } });
     fireEvent.change(getByPlaceholderText('Enter Your Address'), { target: { value: '123 Street' } });
     fireEvent.change(getByPlaceholderText('Enter Your DOB'), { target: { value: '2000-01-01' } });
-    fireEvent.change(getByPlaceholderText('What is Your Favorite sports'), { target: { value: 'Football' } });
+  fireEvent.change(getByPlaceholderText('What is Your Favorite Color?'), { target: { value: 'Football' } });
 
     fireEvent.click(getByText('REGISTER'));
 
