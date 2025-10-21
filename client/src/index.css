@@ -6,6 +6,27 @@
   box-sizing: border-box;
 }
 
+/* Sticky footer layout */
+html, body {
+  height: 100%;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#root > div {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1;
+}
+
 /* navbar */
 .navbar {
   font-family: "Poppins", sans-serif;
@@ -95,4 +116,52 @@
 .product-link {
   text-decoration: none !important;
   color: black !important;
+}
+
+/* =================================
+======== About Page CSS ======= */
+.about-section {
+  min-height: 70vh;
+  padding: 40px 20px;
+}
+
+.about-us {
+  margin-top: 20px;
+}
+
+.about-section h1,
+.about-section h2,
+.about-section h3 {
+  color: #2c3e50;
+}
+
+.about-section p {
+  line-height: 1.6;
+  color: #555;
+}
+
+.about-section ul {
+  padding-left: 0;
+}
+
+.about-section ul li {
+  padding: 5px 0;
+  color: #2c3e50;
+}
+
+/* =================================
+======== Contact & Policy Page CSS ======= */
+.contactus {
+  min-height: 70vh;
+  padding: 40px 20px;
+  margin: 0 auto;
+}
+
+.contactus h1 {
+  margin-top: 20px;
+}
+
+.contactus p {
+  line-height: 1.6;
+  color: #555;
 }
