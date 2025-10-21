@@ -141,5 +141,19 @@
     "createdAt": "2025-02-04T13:40:46.071Z",
     "updatedAt": "2025-02-04T13:40:46.071Z",
     "__v": 0
+  },
+  
+  {
+    "_id": "68bfef8f99283208c0c1feac",
+    "name": "Admin",
+    "email": "admin@example.com",
+    "password": "$2b$10$J7SRZlgixgr1brg8Nl8n5uRprF2k5UfRwjLov/RbdhOjLoBxCrvz.",
+    "phone": "12345678",
+    "address": "Admin Address",
+    "answer": "abcd",
+    "role": 1,
+    "createdAt": "2025-09-09T09:12:47.345Z",
+    "updatedAt": "2025-09-09T09:12:47.345Z",
+    "__v": 0
   }
 ]
