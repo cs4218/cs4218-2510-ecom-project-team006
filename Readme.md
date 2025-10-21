@@ -16,7 +16,7 @@
 ## Workload Distribution (MS2)
 | Assignee | Integration Testing | UI Testing |
 |---|-----------------|----------------|
-| Low Zheng Hui | *[Integration Testing Placeholder]* | *[UI Testing Placeholder]* |
+| Low Zheng Hui | `helpers/authHelper.integration.test.js`<br>`middlewares/authMiddleware.integration.test.js`<br>`controllers/authController.integration.test.js`<br>`controllers/authRoutes.integration.test.js`<br>`models/userModel.integration.test.js` | `tests/register.spec.js`<br>`tests/login.spec.js`<br>`tests/forgot-password.spec.js` |
 | Wong Swee Chong, Dave | `pages/admin/AdminDashboard.integration.test.js`<br>`controllers/categoryController.integration.test.js`<br>`controllers/productController.admin.integration.test.js` | `tests/admin-dashboard.spec.js` |
 | Liu Yifan (username: nusliuyifan) | `controllers/orderManagement.integration.test.js`<br> `controllers/orderModel.integration.test.js`<br> `controllers/updateProfile.integration.test.js`  | `tests/footer.spec.js`<br> `tests/about.spec.js`<br> `tests/header.spec.js`<br> `tests/pagenotfound.spec.js`<br>`tests/spinner.spec.js`|
 | Branson Lam Jian Tao | `controllers/productController.integration.test.js` <br> `pages/CategoryProduct.integration.test.js` <br> `pages/ProductDetails.integration.test.js` | `tests/category-product.spec.js` <br> `tests/contact.spec.js` <br> `tests/policy.spec.js` <br> `tests/product-details.spec.js` |
