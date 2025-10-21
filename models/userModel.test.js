@@ -29,7 +29,7 @@ describe('User Model Schema', () => {
       email: 'alice@example.com',
       password: 'hashed-password',
       phone: '1234567890',
-      address: { street: '123 Main St' },
+  address: '123 Main St',
       answer: 'blue'
     };
 
