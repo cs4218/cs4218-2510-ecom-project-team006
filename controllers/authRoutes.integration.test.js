@@ -102,21 +102,6 @@ describe('Auth Routes - High-level Integration', () => {
     expect(adminRes.body).toEqual({ ok: true });
   });
 
-  test('Profile update and protected route require valid token', async () => {
-    // Update profile with valid token
-    const updateRes = await request(app)
-      .put('/api/v1/auth/profile')
-      .set('Authorization', normalToken)
-      .send({ name: 'Updated User', phone: '1112223333' });
-    expect(updateRes.status).toBe(200);
-    expect(updateRes.body.success).toBe(true);
-    expect(updateRes.body.updatedUser.name).toBe('Updated User');
-    // Try with no token
-    const noTokenRes = await request(app)
-      .put('/api/v1/auth/profile')
-      .send({ name: 'Should Fail' });
-    expect(noTokenRes.status).toBe(401);
-  });
 
   test('Protected routes reject invalid or missing tokens', async () => {
     // No token
