@@ -1,45 +1,36 @@
 import React, { useState } from "react";
 import Layout from "./../../components/Layout";
 import axios from "axios";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import "../../styles/AuthStyles.css";
-import { useAuth } from "../../context/auth";
 
-const Login = () => {
+const ForgotPassword = () => {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [auth, setAuth] = useAuth();
-  
+  const [answer, setAnswer] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   const navigate = useNavigate();
-  const location = useLocation();
-  
 
   // form function
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("/api/v1/auth/login", {
+      const res = await axios.post("/api/v1/auth/forgot-password", {
         email,
-        password,
+        answer,
+        newPassword,
       });
       if (res && res.data.success) {
-        toast.success(res.data && res.data.message, {
-            duration: 5000,
-            icon: "🙏",
-            style: {
-              background: "green",
-              color: "white",
-            },
-          });
-        setAuth({
-            ...auth,
-            user: res.data.user,
-            token: res.data.token,
+        toast.success(res.data.message, {
+          duration: 5000,
+          icon: "✅",
+          style: {
+            background: "green",
+            color: "white",
+          },
         });
-        localStorage.setItem("auth", JSON.stringify(res.data));
-        navigate(location.state || "/");
+        navigate("/login");
       } else {
         toast.error(res.data.message);
       }
@@ -53,11 +44,12 @@ const Login = () => {
       }
     }
   };
+
   return (
-    <Layout title="Login - Ecommerce App">
-      <div className="form-container " style={{ minHeight: "90vh" }}>
+    <Layout title="Forgot Password - Ecommerce App">
+      <div className="form-container" style={{ minHeight: "90vh" }}>
         <form onSubmit={handleSubmit}>
-          <h4 className="title">LOGIN FORM</h4>
+          <h4 className="title">RESET PASSWORD</h4>
 
           <div className="mb-3">
             <input
@@ -67,35 +59,37 @@ const Login = () => {
               onChange={(e) => setEmail(e.target.value)}
               className="form-control"
               id="exampleInputEmail1"
-              placeholder="Enter Your Email "
+              placeholder="Enter Your Email"
               required
             />
           </div>
+
+          <div className="mb-3">
+            <input
+              type="text"
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              className="form-control"
+              id="exampleInputAnswer1"
+              placeholder="Enter Your Favorite Color"
+              required
+            />
+          </div>
+
           <div className="mb-3">
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
               className="form-control"
               id="exampleInputPassword1"
-              placeholder="Enter Your Password"
+              placeholder="Enter Your New Password"
               required
             />
           </div>
-          <div className="mb-3">
-            <button
-              type="button"
-              className="btn forgot-btn"
-              onClick={() => {
-                navigate("/forgot-password");
-              }}
-            >
-              Forgot Password
-            </button>
-          </div>
 
           <button type="submit" className="btn btn-primary">
-            LOGIN
+            RESET PASSWORD
           </button>
         </form>
       </div>
@@ -103,4 +97,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ForgotPassword;
